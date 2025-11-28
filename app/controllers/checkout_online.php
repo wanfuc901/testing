@@ -155,7 +155,7 @@ if ($method === 'cash') {
 }
 
 /* ===================================================================================
-   🔥 ONLINE PAYMENT — CHỈ TẠO HÓA ĐƠN TẠM (PENDING), CHƯA TẠO VÉ
+   🔥 ONLINE PAYMENT — TẠO HÓA ĐƠN TẠM + TẠO VÉ HOLD
 =================================================================================== */
 
 $orderCode = generate_order_code();
@@ -170,6 +170,7 @@ $orderData = json_encode([
     "total_amount" => $totalPrice
 ], JSON_UNESCAPED_UNICODE);
 
+/* ====== TẠO HÓA ĐƠN PENDING ====== */
 $stmtPay = $conn->prepare("
     INSERT INTO `payments`
     (`user_id`, `method`, `amount`, `order_data`,
@@ -181,15 +182,45 @@ chk($stmtPay, "insertPayPending");
 $u   = (int)$user_id;
 $tot = (float)$totalPrice;
 
-
 $stmtPay->bind_param("idss", $u, $tot, $orderData, $orderCode);
 $stmtPay->execute();
 $payment_id = $stmtPay->insert_id;
 $stmtPay->close();
 
-/* Không tạo vé, không lưu pending_order session nữa */
+/* ==================================================================
+   🔥 TẠO VÉ HOLD — GIỮ GHẾ NGAY LẬP TỨC (chưa success, chưa paid)
+================================================================== */
+$stmtHold = $conn->prepare("
+    INSERT INTO tickets
+    (showtime_id, seat_id, user_id, price, booked_at,
+     channel, paid, status, payment_id)
+    VALUES (?, ?, ?, ?, NOW(), 'online', 0, 'hold', ?)
+");
+chk($stmtHold, "insertHoldTicket");
+
+foreach ($seatArr as $sid) {
+    $sid_int = (int)$sid;
+
+    $stmtHold->bind_param(
+        "iiidi",
+        $showtime_id,
+        $sid_int,
+        $user_id,
+        $ticketPrice,
+        $payment_id
+    );
+    $stmtHold->execute();
+}
+$stmtHold->close();
+
+/* ==== ĐẨY REALTIME: LOCK GHẾ TẠM ==== */
+if (!empty($seatArr)) {
+    emit_seat_locked($showtime_id, $seatArr);
+}
+
+/* ====== CLEAR SESSION ====== */
 unset($_SESSION['temp_booking']);
 
-/* Chuyển sang trang QR */
+/* ====== CHUYỂN ĐẾN QR ====== */
 header("Location: ../../app/views/payment/payment_qr.php?payment_id=" . $payment_id);
 exit;

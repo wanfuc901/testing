@@ -87,4 +87,39 @@ if (!function_exists('emit_ticket_update')) {
             'status'    => $status,
         ]);
     }
+
+
+
+
+    /* ===========================================================
+   🔥 EMIT: GHẾ BỊ GIỮ TẠM (HOLD)
+   Dùng khi user chọn thanh toán online → tạo vé HOLD
+=========================================================== */
+if (!function_exists('emit_seat_locked')) {
+    function emit_seat_locked($showtime_id, $seat_ids = []) {
+
+        $url = 'https://vincent-realtime-node.onrender.com/push';
+
+        $payload = json_encode([
+            'type' => 'seat_locked',
+            'data' => [
+                'showtime_id' => $showtime_id,
+                'seats'       => $seat_ids
+            ]
+        ], JSON_UNESCAPED_UNICODE);
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_TIMEOUT        => 2,
+        ]);
+
+        curl_exec($ch);
+        curl_close($ch);
+    }
+}
+
 }
