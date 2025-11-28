@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
 require __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../../helpers/realtime.php";
+require_once __DIR__ . "/../../../helpers/order_helper.php";
 
 $conn->set_charset("utf8mb4");
 
@@ -33,11 +34,7 @@ if ($action === 'detail' && isset($_GET['id'])) {
 
     if (!$pay) die("Không tìm thấy hóa đơn.");
 
-    /* ============================================================
-       LẤY DANH SÁCH VÉ — tickets.payment_id
-    ============================================================= */
-    $tickets = [];
-
+    /* VÉ */
     $sqlTickets = "
         SELECT 
             t.*, 
@@ -52,22 +49,14 @@ if ($action === 'detail' && isset($_GET['id'])) {
         JOIN rooms r ON r.room_id = st.room_id
         WHERE t.payment_id = ?
     ";
-
     $stmtT = $conn->prepare($sqlTickets);
     if (!$stmtT) die("SQL ERROR TICKETS: " . $conn->error);
-
     $stmtT->bind_param("i", $id);
     $stmtT->execute();
     $tickets = $stmtT->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmtT->close();
 
-
-    /* ============================================================
-       LẤY DANH SÁCH COMBO — payment_combos
-       (CỘT ĐÚNG: qty, price, total)
-    ============================================================= */
-    $combos = [];
-
+    /* COMBO */
     $sqlCombo = "
         SELECT 
             pc.qty,
@@ -78,19 +67,13 @@ if ($action === 'detail' && isset($_GET['id'])) {
         JOIN combos c ON c.combo_id = pc.combo_id
         WHERE pc.payment_id = ?
     ";
-
     $stmtC = $conn->prepare($sqlCombo);
     if (!$stmtC) die("SQL ERROR COMBO: " . $conn->error);
-
     $stmtC->bind_param("i", $id);
     $stmtC->execute();
     $combos = $stmtC->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmtC->close();
 
-
-    /* ============================================================
-       OUTPUT HTML POPUP
-    ============================================================= */
     echo "<h2>Hóa đơn #{$id}</h2>";
     echo "<p><strong>Khách:</strong> ".htmlspecialchars($pay['fullname'])." (".htmlspecialchars($pay['email']).")</p>";
     echo "<p><strong>Mã đơn:</strong> {$pay['provider_txn_id']}</p>";
@@ -98,7 +81,6 @@ if ($action === 'detail' && isset($_GET['id'])) {
     echo "<p><strong>Trạng thái:</strong> {$pay['status']}</p>";
     echo "<hr>";
 
-    /* VÉ */
     echo "<h3>Danh sách vé</h3><ul>";
     if ($tickets) {
         foreach ($tickets as $t) {
@@ -111,7 +93,6 @@ if ($action === 'detail' && isset($_GET['id'])) {
     }
     echo "</ul>";
 
-    /* COMBO */
     echo "<h3>Combo</h3><ul>";
     if ($combos) {
         foreach ($combos as $c) {
@@ -139,42 +120,51 @@ if (!empty($_POST['payments'])) {
 
 if (!$ids) die("No bills selected.");
 
-$in = implode(",", array_fill(0, count($ids), '?'));
+$in   = implode(",", array_fill(0, count($ids), '?'));
 $type = str_repeat('i', count($ids));
 
 switch ($action) {
 
     case 'mark_paid':
+        // CHỈ đổi status, KHÔNG tạo vé
         $sql = "UPDATE payments SET status='success' WHERE payment_id IN ($in)";
         $newStatus = "success";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) die("SQL ERROR PREPARE ACTION: " . $conn->error);
+        $stmt->bind_param($type, ...$ids);
+        $stmt->execute();
+        $stmt->close();
         break;
 
     case 'confirm':
-        $sql = "UPDATE payments SET status='success' WHERE payment_id IN ($in)";
+        // GỌI finalize_payment -> tạo vé + combo + update status
+        foreach ($ids as $pid) {
+            try {
+                finalize_payment($pid, $_SESSION['name'] ?? 'admin');
+            } catch (Exception $e) {
+                // Có thể log lỗi, nhưng không die để không chặn các id khác
+            }
+        }
         $newStatus = "success";
         break;
 
     case 'cancel':
         $sql = "UPDATE payments SET status='fail' WHERE payment_id IN ($in)";
         $newStatus = "fail";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) die("SQL ERROR PREPARE ACTION: " . $conn->error);
+        $stmt->bind_param($type, ...$ids);
+        $stmt->execute();
+        $stmt->close();
         break;
 
     default:
         die("Invalid action.");
 }
 
-
-$stmt = $conn->prepare($sql);
-if (!$stmt) die("SQL ERROR PREPARE ACTION: " . $conn->error);
-
-$stmt->bind_param($type, ...$ids);
-$stmt->execute();
-$stmt->close();
-
 /* PUSH REALTIME */
 foreach ($ids as $pid) {
     emit_payment_update($pid, $newStatus);
-
 }
 
 header("Location: ../../../index.php?p=admin_payments&msg=done");

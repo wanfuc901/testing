@@ -143,7 +143,7 @@ if (!empty($seatArr)) {
 
     <h3><i class="bi bi-credit-card-2-front"></i> Chọn phương thức thanh toán</h3>
 
-    <form method="post" action="./app/controllers/process_booking.php">
+    <form method="post" action="./app/controllers/checkout_online.php">
       <input type="hidden" name="showtime_id" value="<?= $showtime_id ?>">
       <input type="hidden" name="seats" value="<?= htmlspecialchars($seats, ENT_QUOTES) ?>">
       <input type="hidden" name="total_all" value="<?= htmlspecialchars($totalAll, ENT_QUOTES) ?>">
