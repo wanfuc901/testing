@@ -4,9 +4,7 @@
 if (!function_exists('realtime_push')) {
     function realtime_push($type, array $data = [])
     {
-        // Có thể cho URL vào config nếu muốn
         $url = 'https://vincent-realtime-node.onrender.com/push';
-
 
         $payload = json_encode([
             'type' => $type,
@@ -27,12 +25,7 @@ if (!function_exists('realtime_push')) {
     }
 }
 
-/**
- * Emit khi thanh toán thành công, ghế chính thức được đặt
- *
- * @param int   $showtime_id
- * @param array $seat_ids (danh sách seat_id)
- */
+/* Thanh toán xong → ghế book vĩnh viễn */
 if (!function_exists('emit_seat_booked_done')) {
     function emit_seat_booked_done($showtime_id, array $seat_ids)
     {
@@ -67,11 +60,7 @@ function emit_payment_new($payment_id, $amount, $user)
     ]);
 }
 
-
-
-/**
- * Emit khi admin cập nhật trạng thái vé (paid / confirmed / cancelled)
- */
+/* Admin cập nhật vé */
 if (!function_exists('emit_ticket_update')) {
     function emit_ticket_update($ticket_id, $status)
     {
@@ -87,39 +76,20 @@ if (!function_exists('emit_ticket_update')) {
             'status'    => $status,
         ]);
     }
+}
 
-
-
-
-    /* ===========================================================
-   🔥 EMIT: GHẾ BỊ GIỮ TẠM (HOLD)
-   Dùng khi user chọn thanh toán online → tạo vé HOLD
-=========================================================== */
+/* GHẾ BỊ GIỮ TẠM (HOLD) KHI TẠO VÉ PENDING */
 if (!function_exists('emit_seat_locked')) {
     function emit_seat_locked($showtime_id, $seat_ids = []) {
 
-        $url = 'https://vincent-realtime-node.onrender.com/push';
+        $showtime_id = (int)$showtime_id;
+        $seat_ids    = array_values(array_map('intval', (array)$seat_ids));
 
-        $payload = json_encode([
-            'type' => 'seat_locked',
-            'data' => [
-                'showtime_id' => $showtime_id,
-                'seats'       => $seat_ids
-            ]
-        ], JSON_UNESCAPED_UNICODE);
-
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST           => true,
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-            CURLOPT_POSTFIELDS     => $payload,
-            CURLOPT_TIMEOUT        => 2,
+        realtime_push('seat_locked', [
+            'showtime_id' => $showtime_id,
+            'seat_ids'    => $seat_ids
         ]);
-
-        curl_exec($ch);
-        curl_close($ch);
     }
 }
 
-}
+

@@ -1,5 +1,4 @@
 <?php
-// /helpers/order_helper.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 require_once __DIR__ . '/../app/config/config.php';
@@ -15,7 +14,7 @@ function generate_order_code() {
 }
 
 /* ============================
-   KIỂM TRA GHẾ
+   KIỂM TRA GHẾ FLOW CŨ
 ============================ */
 function is_seat_available($showtime_id, array $seat_ids) {
     global $conn;
@@ -23,7 +22,7 @@ function is_seat_available($showtime_id, array $seat_ids) {
     if (empty($seat_ids)) return false;
 
     $qMarks = implode(',', array_fill(0, count($seat_ids), '?'));
-    $types  = str_repeat('i', count($seat_ids)+1);
+    $types  = str_repeat('i', count($seat_ids) + 1);
     $params = array_merge([$showtime_id], $seat_ids);
 
     $sql = "
@@ -44,7 +43,7 @@ function is_seat_available($showtime_id, array $seat_ids) {
 }
 
 /* ============================
-   FINALIZE PAYMENT (ADMIN/CALLBACK)
+   FINALIZE PAYMENT
 ============================ */
 function finalize_payment($payment_id, $confirmed_by = "system") {
     global $conn;
@@ -60,70 +59,141 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
     $stmt->close();
 
     if (!$payment) throw new Exception("Không tìm thấy payment");
-    if ($payment['status'] === 'success') return ["status"=>"ok","message"=>"Đã xử lý trước đó"];
 
     /* LẤY ORDER_DATA */
-    $data = json_decode($payment['order_data'], true);
-    if (!$data) throw new Exception("order_data trống hoặc lỗi JSON");
+    $data = json_decode($payment['order_data'] ?? '', true);
+    if (!$data) throw new Exception("order_data lỗi");
 
     $user_id      = (int)$payment['user_id'];
     $showtime_id  = (int)$data['showtime_id'];
     $seat_ids     = $data['seats'];
     $ticket_price = (float)$data['ticket_price'];
-    $combos       = $data['combos'];
-    $total_amount = (float)$data['total_amount'];
+    $combos       = $data['combos'] ?? [];
 
-    if (!is_seat_available($showtime_id, $seat_ids))
-        throw new Exception("Ghế đã có người đặt");
+    if (empty($seat_ids)) throw new Exception("Không có ghế trong order_data");
 
-    /* TRANSACTION */
+    /* LẤY VÉ HOLD */
+    $hold = [];
+    $stmtH = $conn->prepare("SELECT ticket_id, seat_id FROM tickets WHERE payment_id=?");
+    $stmtH->bind_param("i", $payment_id);
+    $stmtH->execute();
+    $r = $stmtH->get_result();
+    while ($row = $r->fetch_assoc()) $hold[] = $row;
+    $stmtH->close();
+
+    $now = date("Y-m-d H:i:s");
+    $ticket_ids = [];
+    $emitSeats = [];
+
     $conn->begin_transaction();
+
     try {
-        $now = date("Y-m-d H:i:s");
-        $ticket_ids = [];
 
-        /* INSERT VÉ */
-        $sqlT = "
-            INSERT INTO tickets
-            (showtime_id, seat_id, user_id, channel, paid, status,
-             confirmed_by, confirmed_at, price, payment_id)
-            VALUES (?, ?, ?, 'online', 1, 'confirmed', ?, ?, ?, ?)
-        ";
-        $stmtT = $conn->prepare($sqlT);
+        /* ===============================
+           CASE A — UPDATE VÉ HOLD
+        =============================== */
+        if (!empty($hold)) {
 
-        foreach ($seat_ids as $sid) {
-            $sid = (int)$sid;
-            $stmtT->bind_param(
-                "iiissdi",
-                $showtime_id, $sid, $user_id,
-                $confirmed_by, $now, $ticket_price, $payment_id
-            );
-            $stmtT->execute();
-            $ticket_ids[] = $stmtT->insert_id;
+            $sqlU = "
+                UPDATE tickets
+                SET paid=1,
+                    status='pending',
+                    confirmed_by=?,
+                    confirmed_at=?,
+                    price=?
+                WHERE ticket_id=?
+            ";
+
+            $stmtU = $conn->prepare($sqlU);
+            if (!$stmtU) throw new Exception($conn->error);
+
+            foreach ($hold as $t) {
+                $tid = (int)$t['ticket_id'];
+
+                $stmtU->bind_param(
+                    "ssdi",
+                    $confirmed_by,
+                    $now,
+                    $ticket_price,
+                    $tid
+                );
+                $stmtU->execute();
+
+                $ticket_ids[] = $tid;
+            }
+            $stmtU->close();
+
+            $emitSeats = array_column($hold, 'seat_id');
         }
-        $stmtT->close();
 
-        /* INSERT COMBO */
+        /* ===============================
+           CASE B — INSERT VÉ MỚI
+        =============================== */
+        else {
+
+            if (!is_seat_available($showtime_id, $seat_ids))
+                throw new Exception("Ghế đã có người đặt");
+
+            $sqlT = "
+                INSERT INTO tickets
+                (showtime_id, seat_id, user_id, payment_id, channel,
+                 paid, status, confirmed_by, confirmed_at, price)
+                VALUES (?, ?, ?, ?, 'online', 1, 'confirmed', ?, ?, ?)
+            ";
+
+            $stmtT = $conn->prepare($sqlT);
+            if (!$stmtT) throw new Exception($conn->error);
+
+            foreach ($seat_ids as $sid) {
+
+                $stmtT->bind_param(
+                    "iiiissd",
+                    $showtime_id,
+                    $sid,
+                    $user_id,
+                    $payment_id,
+                    $confirmed_by,
+                    $now,
+                    $ticket_price
+                );
+                $stmtT->execute();
+
+                $ticket_ids[] = $stmtT->insert_id;
+            }
+
+            $stmtT->close();
+
+            $emitSeats = $seat_ids;
+        }
+
+        /* ===============================
+           INSERT COMBO
+        =============================== */
         if (!empty($combos)) {
+
             $sqlC = "
                 INSERT INTO payment_combos(payment_id, combo_id, qty, price, total)
                 VALUES (?, ?, ?, ?, ?)
             ";
+
             $stmtC = $conn->prepare($sqlC);
+
             foreach ($combos as $c) {
-                $cid   = (int)$c['combo_id'];
-                $qty   = (int)$c['qty'];
-                $price = (float)$c['price'];
+
+                $cid   = $c['id'] ?? $c['combo_id'];
+                $qty   = $c['qty'];
+                $price = $c['price'];
                 $total = $qty * $price;
 
                 $stmtC->bind_param("iiidd", $payment_id, $cid, $qty, $price, $total);
                 $stmtC->execute();
             }
+
             $stmtC->close();
         }
 
         /* UPDATE PAYMENT */
-        $stmtU = $conn->prepare("UPDATE payments SET status='success', paid_at=? WHERE payment_id=?");
+        $stmtU = $conn->prepare("UPDATE payments SET status='pending', paid_at=? WHERE payment_id=?");
         $stmtU->bind_param("si", $now, $payment_id);
         $stmtU->execute();
         $stmtU->close();
@@ -131,10 +201,8 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
         $conn->commit();
 
         /* REALTIME */
-        realtime_push("ticket_confirmed", [
-            "showtime_id"=>$showtime_id,
-            "seats"=>$seat_ids
-        ]);
+        emit_seat_booked_done($showtime_id, $emitSeats);
+        emit_payment_update($payment_id, 'success');
 
         return ["status"=>"ok","ticket_ids"=>$ticket_ids];
 

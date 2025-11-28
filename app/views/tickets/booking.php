@@ -49,13 +49,19 @@ while ($s = $r->fetch_assoc()) {
     $seats[$s['rownum']][$s['colnum']] = $s['seat_id'];
 }
 
-// ===== Lấy ghế đã đặt =====
+// ===== Lấy ghế đã đặt / đang giữ =====
 $booked = [];
-$q2 = $conn->prepare("SELECT seat_id FROM tickets WHERE showtime_id=?");
+$q2 = $conn->prepare("
+    SELECT seat_id 
+    FROM tickets 
+    WHERE showtime_id = ?
+      AND status IN ('pending','paid','confirmed')
+");
 $q2->bind_param("i", $showtime_id);
 $q2->execute();
 $r2 = $q2->get_result();
 while ($b = $r2->fetch_assoc()) $booked[] = $b['seat_id'];
+$q2->close();
 
 // ===== Giá vé =====
 $pq = $conn->prepare("SELECT m.ticket_price 

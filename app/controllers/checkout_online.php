@@ -12,12 +12,6 @@ require_once __DIR__ . "/../../helpers/order_helper.php";
 $conn->set_charset("utf8mb4");
 date_default_timezone_set("Asia/Ho_Chi_Minh");
 
-/* ========= COMMON ERROR CHECK ========= */
-function chk($stmt, $name) {
-    global $conn;
-    if (!$stmt) die("SQL ERROR at [$name]: " . $conn->error);
-}
-
 /* ========= VALIDATE ========= */
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -41,12 +35,11 @@ $seatArr = array_unique(array_filter(array_map('intval', explode(",", $seats))))
 
 /* ========= GET TICKET PRICE ========= */
 $stmtPrice = $conn->prepare("
-    SELECT m.`ticket_price`
-    FROM `movies` m
-    JOIN `showtimes` s ON s.`movie_id` = m.`movie_id`
-    WHERE s.`showtime_id` = ?
+    SELECT m.ticket_price
+    FROM movies m
+    JOIN showtimes s ON s.movie_id = m.movie_id
+    WHERE s.showtime_id = ?
 ");
-chk($stmtPrice, "stmtPrice");
 $stmtPrice->bind_param("i", $showtime_id);
 $stmtPrice->execute();
 $stmtPrice->bind_result($ticketPrice);
@@ -59,103 +52,57 @@ $totalTicket = count($seatArr) * $ticketPrice;
 $totalPrice  = $totalTicket + $combo_total;
 
 /* ===================================================================================
-   🔥 OFFLINE PAYMENT — TẠO VÉ NGAY
+   OFFLINE PAYMENT — TẠO VÉ NGAY
 =================================================================================== */
 if ($method === 'cash') {
 
     $txn = generate_order_code();
 
     $insertPay = $conn->prepare("
-        INSERT INTO `payments`
-        (`user_id`, `method`, `amount`, `status`, `provider_txn_id`, `paid_at`)
+        INSERT INTO payments
+        (user_id, method, amount, status, provider_txn_id, paid_at)
         VALUES (?, 'offline', ?, 'success', ?, NOW())
     ");
-    chk($insertPay, "insertPayment");
 
-    $u      = (int)$user_id;
-    $totalP = (float)$totalPrice;
-
-    $insertPay->bind_param("ids", $u, $totalP, $txn);
+    $insertPay->bind_param("ids", $user_id, $totalPrice, $txn);
     $insertPay->execute();
     $payment_id = $insertPay->insert_id;
     $insertPay->close();
 
-    /* ===== INSERT TICKET ===== */
-    $insertTicket = $conn->prepare("
-        INSERT INTO `tickets`
-        (`showtime_id`, `seat_id`, `user_id`, `price`, `booked_at`,
-         `channel`, `paid`, `status`, `payment_id`)
-        VALUES (?, ?, ?, ?, NOW(), 'offline', 1, 'confirmed', ?)
-    ");
-    chk($insertTicket, "insertTicket");
+    /* INSERT TICKET */
+    $sqlT = "
+        INSERT INTO tickets
+        (showtime_id, seat_id, user_id, payment_id, channel,
+         paid, status, price, booked_at)
+        VALUES (?, ?, ?, ?, 'offline', 1, 'confirmed', ?, NOW())
+    ";
 
-    $booked = [];
+    $stmtT = $conn->prepare($sqlT);
 
-    foreach ($seatArr as $seatId) {
-        /* Check trùng ghế */
-        $stmtCheck = $conn->prepare("
-            SELECT 1 FROM `tickets`
-            WHERE `showtime_id`=? AND `seat_id`=?
-        ");
-        chk($stmtCheck, "checkSeat");
-        $stmtCheck->bind_param("ii", $showtime_id, $seatId);
-        $stmtCheck->execute();
-        $stmtCheck->store_result();
-        if ($stmtCheck->num_rows > 0) {
-            $stmtCheck->close();
-            continue;
-        }
-        $stmtCheck->close();
-
-        $st_id = (int)$showtime_id;
-        $sid   = (int)$seatId;
-        $uid   = (int)$user_id;
-        $price = (float)$ticketPrice;
-        $pid   = (int)$payment_id;
-
-        $insertTicket->bind_param("iiidi", $st_id, $sid, $uid, $price, $pid);
-        $insertTicket->execute();
-
+    foreach ($seatArr as $sid) {
+        $stmtT->bind_param(
+            "iiiid",
+            $showtime_id,
+            $sid,
+            $user_id,
+            $payment_id,
+            $ticketPrice
+        );
+        $stmtT->execute();
         $booked[] = $sid;
     }
+    $stmtT->close();
 
-    $insertTicket->close();
-
-    /* ===== COMBO ===== */
-    if (!empty($combos)) {
-        $stmtCombo = $conn->prepare("
-            INSERT INTO `payment_combos`
-            (`payment_id`, `combo_id`, `qty`, `price`, `total`)
-            VALUES (?, ?, ?, ?, ?)
-        ");
-        chk($stmtCombo, "insertCombo");
-
-        foreach ($combos as $c) {
-            $p_id = (int)$payment_id;
-            $c_id = (int)$c['id'];
-            $qty  = (int)$c['qty'];
-            $pri  = (float)$c['price'];
-            $tot  = (float)$c['total'];
-
-            $stmtCombo->bind_param("iiidd", $p_id, $c_id, $qty, $pri, $tot);
-            $stmtCombo->execute();
-        }
-        $stmtCombo->close();
-    }
+    /* REALTIME */
+    emit_seat_booked_done($showtime_id, $booked);
 
     unset($_SESSION['temp_booking']);
-
-    /* REALTIME PUSH */
-    if (!empty($booked)) {
-        emit_seat_booked_done($showtime_id, $booked);
-    }
-
     header("Location: ../../public/booking_success.php");
     exit;
 }
 
 /* ===================================================================================
-   🔥 ONLINE PAYMENT — TẠO HÓA ĐƠN TẠM + TẠO VÉ HOLD
+   ONLINE PAYMENT — TẠO PAYMENT PENDING + VÉ HOLD
 =================================================================================== */
 
 $orderCode = generate_order_code();
@@ -170,57 +117,44 @@ $orderData = json_encode([
     "total_amount" => $totalPrice
 ], JSON_UNESCAPED_UNICODE);
 
-/* ====== TẠO HÓA ĐƠN PENDING ====== */
+/* INSERT PAYMENT */
 $stmtPay = $conn->prepare("
-    INSERT INTO `payments`
-    (`user_id`, `method`, `amount`, `order_data`,
-     `status`, `provider_txn_id`, `created_at`)
+    INSERT INTO payments
+    (user_id, method, amount, order_data, status, provider_txn_id, created_at)
     VALUES (?, 'online', ?, ?, 'pending', ?, NOW())
 ");
-chk($stmtPay, "insertPayPending");
-
-$u   = (int)$user_id;
-$tot = (float)$totalPrice;
-
-$stmtPay->bind_param("idss", $u, $tot, $orderData, $orderCode);
+$stmtPay->bind_param("idss", $user_id, $totalPrice, $orderData, $orderCode);
 $stmtPay->execute();
 $payment_id = $stmtPay->insert_id;
 $stmtPay->close();
 
-/* ==================================================================
-   🔥 TẠO VÉ HOLD — GIỮ GHẾ NGAY LẬP TỨC (chưa success, chưa paid)
-================================================================== */
-$stmtHold = $conn->prepare("
+/* INSERT VÉ PENDING (HOLD) */
+$sqlHold = "
     INSERT INTO tickets
-    (showtime_id, seat_id, user_id, price, booked_at,
-     channel, paid, status, payment_id)
-    VALUES (?, ?, ?, ?, NOW(), 'online', 0, 'hold', ?)
-");
-chk($stmtHold, "insertHoldTicket");
+    (showtime_id, seat_id, user_id, payment_id, channel,
+     paid, status, price, booked_at)
+    VALUES (?, ?, ?, ?, 'online', 0, 'pending', ?, NOW())
+";
+
+$stmtHold = $conn->prepare($sqlHold);
 
 foreach ($seatArr as $sid) {
-    $sid_int = (int)$sid;
-
     $stmtHold->bind_param(
-        "iiidi",
+        "iiiid",
         $showtime_id,
-        $sid_int,
+        $sid,
         $user_id,
-        $ticketPrice,
-        $payment_id
+        $payment_id,
+        $ticketPrice
     );
     $stmtHold->execute();
 }
 $stmtHold->close();
 
-/* ==== ĐẨY REALTIME: LOCK GHẾ TẠM ==== */
-if (!empty($seatArr)) {
-    emit_seat_locked($showtime_id, $seatArr);
-}
+/* REALTIME: GHẾ ĐANG GIỮ */
+emit_seat_locked($showtime_id, $seatArr);
 
-/* ====== CLEAR SESSION ====== */
 unset($_SESSION['temp_booking']);
 
-/* ====== CHUYỂN ĐẾN QR ====== */
 header("Location: ../../app/views/payment/payment_qr.php?payment_id=" . $payment_id);
 exit;

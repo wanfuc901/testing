@@ -138,6 +138,7 @@ if (!empty($seatArr)) {
       <p><strong>Tổng combo:</strong> <?= number_format($totalCombo) ?>đ</p>
     <?php endif; ?>
 
+
     <hr style="margin:18px 0;border-color:rgba(255,255,255,.1)">
     <p class="total"><strong>Tổng cộng:</strong> <span><?= number_format($totalAll) ?> đ</span></p>
 
