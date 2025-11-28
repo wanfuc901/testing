@@ -1,0 +1,6 @@
+|   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   +-- loading 
+      confirm_loading.php
+      VincentCinemas_structure.txt
+    [loading]
+      confirm_loading.php
+      VincentCinemas_structure.txt

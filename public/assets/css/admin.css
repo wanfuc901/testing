@@ -1,0 +1,1190 @@
+:root {
+  --red:#e50914; 
+  --red-2:#b20710;
+  --bg:#f8f9fa;
+  --card:#ffffff;
+  --text:#212529;
+  --muted:#6c757d;
+  --gold:#f5c518;
+  --border:#dee2e6;
+  --shadow:rgba(0,0,0,.08);
+  --green:#00e676;
+  --blue:#2196f3;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%;background:var(--bg)}
+body{
+  margin:0;
+  font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+
+/* ===== Sidebar Admin ===== */
+.admin-sidebar{
+  position:fixed;top:0;left:0;height:100vh;width:64px;
+  background:var(--card);color:var(--text);
+  padding:20px 0 20px 6px;
+  border-right:1px solid var(--border);
+  box-shadow:2px 0 8px var(--shadow);
+  transition:width .4s ease;
+  overflow:hidden;
+  z-index:1200;
+}
+.admin-sidebar:hover{width:220px}
+.sidebar-logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;margin-bottom:30px;padding:0 6px}
+.sidebar-logo i{font-size:28px;color:var(--red)}
+.logo-text{opacity:0;visibility:hidden;width:0;overflow:hidden;transition:opacity .3s ease,width .3s ease}
+.admin-sidebar:hover .logo-text{opacity:1;visibility:visible;width:auto}
+.sidebar-menu{list-style:none;display:flex;flex-direction:column;row-gap:.8rem;margin:0;padding:0}
+.sidebar-menu li{border-bottom:1px solid var(--border);border-radius:6px;transition:background .3s ease}
+.sidebar-menu li:hover{background:rgba(245,197,24,.12)}
+.nav-link{display:flex;align-items:center;gap:14px;color:inherit;padding:10px 6px;font-weight:600;font-size:15px}
+.nav-link i{font-size:22px;color:var(--gold);min-width:26px;margin-left:4px;transition:color .2s ease}
+.nav-link:hover i{color:var(--red)}
+.nav-link span{opacity:0;visibility:hidden;width:0;overflow:hidden;white-space:nowrap;transition:opacity .3s ease,width .3s ease}
+.admin-sidebar:hover .nav-link span{opacity:1;visibility:visible;width:auto}
+.sidebar-footer{position:absolute;bottom:20px;left:0;width:100%;padding:0 10px}
+.logout-btn{
+  display:flex;align-items:center;gap:14px;border:none;background:transparent;color:var(--text);
+  font-weight:600;font-size:15px;cursor:pointer;padding:10px 6px;width:100%;
+  border-radius:6px;transition:background .3s ease,color .3s ease;
+}
+.logout-btn i{font-size:22px;color:var(--red)}
+.logout-btn:hover{background:var(--red);color:#fff}
+
+/* ===== Admin Content Containers ===== */
+.admin-wrap{margin-left:80px;transition:margin-left .4s ease;padding:28px}
+.admin-sidebar:hover ~ .admin-wrap{margin-left:230px}
+.admin-container{
+  max-width:1200px;margin:0 auto;background:var(--card);
+  border-radius:16px;
+  border:1px solid var(--border);
+  box-shadow:0 6px 24px var(--shadow);
+  padding:24px;
+}
+.admin-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.admin-title h1{font-size:24px;font-weight:800;color:var(--red);letter-spacing:.5px;margin:0}
+.admin-actions{display:flex;gap:10px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:40px;padding:0 14px;border-radius:10px;
+  border:1px solid var(--border);
+  background:#fff;color:var(--text);
+  font-weight:600;cursor:pointer;transition:.2s;
+}
+.btn.primary{background:var(--red);border-color:transparent;color:#fff}
+.btn.primary:hover{background:var(--red-2)}
+.btn.ghost{background:#fff;border-color:var(--border)}
+.btn.ghost:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ===== Tables ===== */
+.admin-table{
+  width:100%;border-collapse:collapse;margin-top:10px;font-size:14px;
+  background:#fff;border-radius:12px;overflow:hidden;
+  box-shadow:0 2px 10px var(--shadow);
+}
+.admin-table th,.admin-table td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--border)}
+.admin-table thead{background:#fafafa;color:var(--red);text-transform:uppercase;font-weight:700}
+.admin-table tbody tr:hover{background:#f8f9fa}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid var(--border);background:#fff}
+.badge.ok{border-color:#28a745;color:#28a745}
+.badge.warn{border-color:#ffc107;color:#ffc107}
+.badge.err{border-color:#dc3545;color:#dc3545}
+
+.card i {
+  display: block;
+  font-size: 34px;
+  color: var(--gold);
+  margin-bottom: 8px;
+  transition: color .2s ease, transform .2s ease;
+}
+.card:hover i {
+  color: var(--red);
+  transform: scale(1.1);
+}
+
+
+/* ===== Animation Loading / Tick / Error ===== */
+.loading-page {
+  position: relative;
+  min-height: 100vh;
+  background: var(--bg,#0e0e11);
+  color: var(--text,#eee);
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+}
+
+.loading-page .box {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  padding: 40px 60px;
+  background: var(--card,rgba(255,255,255,.06));
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  max-width: 420px;
+  width: 90%;
+}
+
+.loading-page h2 {
+  color: var(--gold,#00e676);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 10px 0;
+}
+
+.loading-page p {
+  color: var(--muted,#aaa);
+  font-size: 15px;
+  margin-top: 4px;
+}
+
+/* ===== Spinner ===== */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255,255,255,.15);
+  border-top-color: var(--gold,#00e676);
+  border-radius: 50%;
+  animation: spin .9s linear infinite;
+  margin: 0 auto 25px;
+}
+
+/* ===== Tick / Error marks ===== */
+.checkmark, .errormark {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  display: none;
+  stroke-width: 3;
+  stroke-miterlimit: 10;
+  margin: 0 auto 12px;
+}
+
+/* Tick xanh */
+.checkmark { stroke: #4BB71B; }
+.checkmark__circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  fill: none;
+  stroke: #4BB71B;
+  animation: stroke .6s cubic-bezier(0.65,0,0.45,1) forwards;
+}
+.checkmark__check {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  fill: none;
+  stroke: #fff;
+  animation: stroke .3s cubic-bezier(0.65,0,0.45,1) .6s forwards;
+}
+
+/* Dấu X đỏ */
+.errormark { stroke: #e74c3c; }
+.errormark__circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  fill: none;
+  stroke: #e74c3c;
+  animation: stroke .6s cubic-bezier(0.65,0,0.45,1) forwards;
+}
+.errormark__cross {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  fill: none;
+  stroke: #fff;
+  animation: stroke .3s cubic-bezier(0.65,0,0.45,1) .6s forwards;
+}
+
+/* ===== Keyframes ===== */
+@keyframes stroke { 100% { stroke-dashoffset: 0; } }
+@keyframes scale { 0%,100% { transform:none; } 50% { transform:scale(1.05); } }
+
+
+/* ===== Forms ===== */
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.form-grid .full{grid-column:1/-1}
+.input,select,textarea{
+  width:100%;height:42px;padding:0 12px;border-radius:10px;
+  border:1px solid var(--border);
+  background:#fff;color:var(--text);
+}
+textarea{height:auto;min-height:100px;padding:12px}
+.input:focus,select:focus,textarea:focus{
+  outline:none;border-color:var(--gold);
+  box-shadow:0 0 0 2px rgba(245,197,24,.25);
+}
+.filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.help{color:var(--muted);font-size:12px}
+
+/* ===== Cards ===== */
+.card-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px;
+  text-align:center;
+  box-shadow:0 3px 10px var(--shadow);
+  transition:.2s;
+}
+.card .k{color:var(--muted);font-size:12px}
+.card .v{font-size:22px;font-weight:800;margin-top:6px;color:var(--red)}
+.card:hover{transform:translateY(-3px);box-shadow:0 6px 16px var(--shadow)}
+
+/* ===== Responsive ===== */
+@media (max-width:1000px){
+  .card-grid{grid-template-columns:repeat(2,1fr)}
+  .form-grid{grid-template-columns:1fr}
+}
+@media (max-width:720px){
+  .admin-wrap{margin-left:70px}
+  .admin-sidebar:hover ~ .admin-wrap{margin-left:210px}
+}
+
+/* ==== TIMELINE FIX ==== */
+.timeline-wrap {
+  margin-top: 20px;
+  background: linear-gradient(180deg,#ffffff,#f8f9fa);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px var(--shadow);
+  overflow-x: auto;
+  white-space: nowrap;
+  position: relative;
+  scroll-behavior: smooth;
+  padding-bottom: 10px;
+}
+
+/* Thanh giờ phía trên */
+.timeline-hours {
+  position: sticky;
+  top: 0;
+  left: 120px; /* khớp với .room-label width */
+  display: flex;
+  height: 28px;
+  width: calc((23 - 8) * 100px);
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+  z-index: 6;
+}
+
+
+
+
+.tmark {
+  flex: 0 0 100px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  border-left: 1px solid var(--border);
+  line-height: 28px;
+}
+
+/* Hàng phòng */
+.room-row {
+  display: flex;
+  position: relative;
+  height: 60px;
+  border-bottom: 1px solid var(--border);
+}
+.room-label {
+  width: 120px;
+  text-align: center;
+  line-height: 60px;
+  background: #f8f9fa;
+  color: var(--red);
+  font-weight: 600;
+  border-right: 1px solid var(--border);
+}
+.room-track {
+  flex: 1;
+  position: relative;
+}
+.room-track::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc((23 - 8) * 100px); /* 08:00 → 23:00 */
+  height: 100%;
+  background: repeating-linear-gradient(to right, #f1f3f5 0, #f1f3f5 99px, transparent 100px);
+}
+
+
+/* Slot phim */
+.slot {
+  position: absolute;
+  top: 6px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0,0,0,.25);
+  padding: 0 8px;
+  transition: all .2s ease;
+}
+.slot img {
+  width: 40px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.slot:hover { transform: scale(1.05); }
+
+/* Marker thời gian */
+#time-marker {
+  position: absolute;
+  top: 28px;
+  bottom: 0;
+  width: 2px;
+  background: red;
+  z-index: 10;
+}
+#time-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  background: red;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 4px;
+  z-index: 11;
+}
+slot:hover{transform:scale(1.05);box-shadow:0 0 15px rgba(229,9,20,.4)}
+
+/* ===== Date Picker Form ===== */
+.date-picker{
+  display:flex;gap:10px;align-items:center;
+  background:#fff;border:1px solid var(--border);
+  border-radius:10px;padding:10px 16px;width:max-content;
+  margin-bottom:18px;box-shadow:0 2px 6px var(--shadow);
+}
+.date-picker input[type="date"]{
+  background:#fff;border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;color:var(--text);font-weight:600;
+}
+.date-picker button{
+  background:var(--red);color:#fff;border:none;border-radius:8px;font-weight:600;
+  padding:6px 14px;cursor:pointer;transition:.2s;
+}
+.date-picker button:hover{background:var(--red-2)}
+
+/* ==========================================================
+   CHARTS MODULE (MERGED FROM chart.css)
+   Áp dụng riêng cho trang doanh thu (body.stats-page)
+   ========================================================== */
+/* Form lọc ngày */
+body.stats-page .filter-form {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 18px;
+  box-shadow: 0 2px 8px var(--shadow);
+  margin-bottom: 30px;
+}
+body.stats-page .filter-form label {
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+body.stats-page .filter-form input[type="date"] {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: var(--text);
+  font-weight: 500;
+}
+body.stats-page .filter-form button,
+body.stats-page .filter-form .btn-print {
+ display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+body.stats-page .filter-form button:hover,
+body.stats-page .filter-form .btn-print:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: #fff;
+}
+body.stats-page .filter-form button i,
+body.stats-page .filter-form .btn-print i {
+  font-size: 18px;
+  color: var(--gold);
+  transition: color 0.2s;
+}
+body.stats-page .filter-form button:hover i,
+body.stats-page .filter-form .btn-print:hover i {
+  color: var(--red);
+}
+/* Cards */
+body.stats-page .cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 18px;
+  margin-bottom: 35px;
+}
+body.stats-page .card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-align: center;
+  padding: 22px;
+  border-radius: 16px;
+  font-size: 18px;
+  box-shadow: 0 2px 10px var(--shadow);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+body.stats-page .card i {
+  font-size: 32px;
+  color: #000;
+  margin-bottom: 8px;
+}
+body.stats-page .card span {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+body.stats-page .card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 14px var(--shadow);
+}
+
+
+/* Nhóm filter trong card */
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.filter-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* Đồng bộ nút như sidebar */
+.filter-form button,
+.filter-form .btn-print {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.filter-form button:hover,
+.filter-form .btn-print:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: #fff;
+}
+.filter-form i {
+  color: var(--gold);
+  transition: color 0.2s;
+}
+.filter-form button:hover i,
+.filter-form .btn-print:hover i {
+  color: var(--red);
+}
+
+
+/* ===== Showtime Form Style ===== */
+.admin-form {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 28px;
+  box-shadow: 0 4px 16px var(--shadow);
+  margin-top: 26px;
+  animation: fadeIn .4s ease;
+}
+@keyframes fadeIn {from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)}}
+
+.admin-form h3 {
+  color: var(--red);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+}
+.admin-form label {
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.admin-form label i {
+  color: var(--gold);
+  font-size: 18px;
+}
+.admin-form .input,
+.admin-form select {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: #111;
+  font-weight: 500;
+  transition: all .2s ease;
+}
+.admin-form .input:focus,
+.admin-form select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(245,197,24,.25);
+}
+
+/* Phân loại phim */
+select option.movie-active {color:#111;}
+select option.movie-upcoming {color:#f5c518;}
+select option.movie-expired {color:#999;}
+
+/* Nút hành động */
+.admin-form .form-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.admin-form button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 42px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0 14px;
+  transition: .2s;
+}
+.admin-form .btn.primary {
+  background: var(--red);
+  color: #fff;
+}
+.admin-form .btn.primary:hover {
+  background: var(--red-2);
+}
+.admin-form .btn.ghost {
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.admin-form .btn.ghost:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+input[type="datetime-local"]::-webkit-datetime-edit-ampm-field {
+  display: none;
+}
+input[name="time_show"] {
+  width: 100%;
+  height: 42px;
+  border: 1px solid var(--border,#555);
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 15px;
+  color: #111;}
+  /* ===== Scrollable Timeline ===== */
+.timeline-wrap {
+  margin-top: 20px;
+  background: linear-gradient(180deg,#ffffff,#f8f9fa);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px var(--shadow);
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  position: relative;
+  scroll-behavior: smooth;
+  padding-bottom: 10px;
+}
+
+/* Thanh đánh dấu thời gian hiện tại */
+#time-marker {
+  position: absolute;
+  top: 28px;
+  bottom: 0;
+  width: 2px;
+  background: red;
+  z-index: 10;
+}
+#time-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translateX(-50%);
+  background: red;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 4px;
+  z-index: 11;
+}
+
+/* Giữ nguyên input giờ */
+input[name="time_show"] {
+  width: 100%;
+  height: 42px;
+  border: 1px solid var(--border,#555);
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 15px;
+  color: #111;
+}
+
+input[disabled][title] {
+  position: relative;
+  cursor: not-allowed;
+}
+
+input[disabled][title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  top: -38px;
+  left: 0;
+  white-space: nowrap;
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  z-index: 10;
+  pointer-events: none;
+}
+.slot.past {
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+
+.admin-table td.td-actions {
+  vertical-align: middle !important;
+  text-align: center;
+}
+
+.td-actions {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+}
+
+.td-actions form {
+  margin: 0 !important;
+  display: inline;
+}
+
+.td-actions .btn {
+  height: 34px;
+  padding: 0 12px;
+  line-height: 1;
+  font-size: 13px;
+}
+/* ===== Fix nút Sửa/Xóa bị lệch ===== */
+.admin-table td.td-actions {
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  padding: 10px 12px;
+}
+
+.td-actions {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.td-actions a,
+.td-actions form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+
+.td-actions form {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.td-actions .btn {
+  height: 34px;
+  line-height: 1;
+  padding: 0 14px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+/* =====================================================
+   🎞️ VIN-CINE ADMIN REEL LOADER (SIGNATURE LIGHT MODE)
+   ===================================================== */
+.vc-loader.admin {
+  background: radial-gradient(circle at center, #ffffff 0%, #f0f0f3 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  animation: adminFadeIn .6s ease;
+}
+@keyframes adminFadeIn { from{opacity:0} to{opacity:1} }
+
+.vc-loader.admin .vc-reel {
+  border-color: rgba(245,197,24,0.35);
+  background: radial-gradient(circle at center, #fff 0%, #f8f9fa 90%);
+  box-shadow:
+    0 0 25px rgba(245,197,24,.3),
+    0 0 40px rgba(229,9,20,.2),
+    inset 0 0 10px rgba(0,0,0,.08);
+  position: relative;
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  animation: vcReelSpin 1.2s linear infinite;
+}
+
+.vc-loader.admin .vc-reel-inner {
+  background: radial-gradient(circle at center, #e50914 0%, #b20710 80%);
+  width: 65%; height: 65%;
+  border-radius: 50%;
+  box-shadow: 0 0 18px rgba(229,9,20,.5), inset 0 0 10px rgba(0,0,0,.15);
+}
+
+.vc-loader.admin .vc-reel-hole {
+  position: absolute;
+  inset: 35%;
+  background: #fafafa;
+  border-radius: 50%;
+  box-shadow: inset 0 0 8px rgba(0,0,0,.25);
+}
+
+.vc-loader.admin .vc-reel-strip {
+  position: absolute;
+  width: 10px;
+  height: 100px;
+  border-radius: 6px;
+  background: repeating-linear-gradient(
+    to bottom,
+    #f5c518 0 8px,
+    transparent 8px 16px
+  );
+  filter: drop-shadow(0 0 6px rgba(245,197,24,.8));
+  animation: vcReelGlow 1.4s ease-in-out infinite alternate;
+}
+
+.vc-loader.admin .vc-reel-light {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #f5c518;
+  box-shadow:
+    0 0 10px #f5c518,
+    0 0 25px rgba(245,197,24,.8),
+    0 0 45px rgba(245,197,24,.4);
+}
+
+.vc-loader.admin .vc-text {
+  margin-top: 20px;
+  font-weight: 900;
+  font-size: 20px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: #212529;
+  text-shadow:
+    0 0 10px rgba(245,197,24,.8),
+    0 0 25px rgba(229,9,20,.3);
+  animation: vcPulseText 1.6s ease-in-out infinite alternate;
+}
+
+/* Animations reused */
+@keyframes vcReelSpin { to { transform: rotate(360deg); } }
+@keyframes vcReelGlow {
+  from {opacity:.8; transform: scaleY(1);}
+  to {opacity:1; transform: scaleY(1.1);}
+}
+@keyframes vcPulseText {
+  from {text-shadow:0 0 6px rgba(245,197,24,.6);}
+  to {text-shadow:0 0 16px rgba(229,9,20,.6),0 0 28px rgba(245,197,24,.8);}
+}
+
+/* ==== Bộ lọc ngày trong Báo cáo ==== */
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-group label {
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.filter-group input[type="date"] {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: var(--text);
+  font-weight: 500;
+  height: 38px;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.filter-group input[type="date"]:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(245,197,24,.25);
+}
+/* ===== Đồng bộ nút Xuất Excel ===== */
+.filter-form a[href*="export_revenue_excel"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.filter-form a[href*="export_revenue_excel"]:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: #fff;
+}
+
+.filter-form a[href*="export_revenue_excel"]::before {
+  content: "\f1c3"; /* biểu tượng file-excel (Boxicons) */
+  font-family: "bootstrap-icons";
+  color: var(--gold);
+  font-size: 18px;
+  transition: color 0.2s;
+}
+
+.filter-form a[href*="export_revenue_excel"]:hover::before {
+  color: var(--red);
+}
+/* === Fix icon bị đụng viền trong các nút lọc/in/xuất === */
+.filter-form button i,
+.filter-form .btn-print i,
+.filter-form a[href*="export_revenue_excel"]::before {
+  margin-right: 6px;
+  margin-left: 2px;
+  font-size: 18px;
+  color: var(--gold);
+  display: inline-block;
+  transform: translateY(1px);
+}
+
+.filter-form button:hover i,
+.filter-form .btn-print:hover i,
+.filter-form a[href*="export_revenue_excel"]:hover::before {
+  color: var(--red);
+}
+
+/* Giữ padding đồng đều để tránh icon dính sát biên */
+.filter-form button,
+.filter-form .btn-print,
+.filter-form a[href*="export_revenue_excel"] {
+  padding: 0 16px;
+  gap: 6px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+  gap: 6px;
+}
+
+.pagination button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.pagination button:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.pagination button.active {
+  background: var(--gold);
+  color: #fff;
+  border-color: var(--gold);
+}
+/* ==== FIX: căn giữa và đồng bộ cột ảnh trong bảng admin ==== */
+.admin-table td img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+  margin: 0 auto;
+  box-shadow: 0 2px 5px rgba(0,0,0,.08);
+  background: #fff;
+}
+
+.admin-table td,
+.admin-table th {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.admin-table th:nth-child(2),
+.admin-table td:nth-child(2) {
+  width: 100px;
+}
+
+/* ==== STYLE: nút chọn file upload trong form admin ==== */
+.admin-form input[type="file"] {
+  display: block;
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.admin-form input[type="file"]::file-selector-button {
+  background: var(--red);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 600;
+  margin-right: 10px;
+  cursor: pointer;
+  transition: background .2s ease;
+}
+
+.admin-form input[type="file"]::file-selector-button:hover {
+  background: var(--red-2);
+}
+
+/* Khi di chuột lên toàn bộ input */
+.admin-form input[type="file"]:hover {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(245,197,24,.25);
+}
+/* === Hiệu ứng xuất hiện tuần tự cho card dashboard === */
+.card {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUpCard .6s ease forwards;
+}
+
+@keyframes fadeUpCard {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+#recentBody tr {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUpCard .6s ease forwards;
+}
+
+:root {
+  --red:#e50914; --red-2:#b20710; --gold:#f5c518;
+  --bg:#f8f9fa; --card:#fff; --border:#dee2e6;
+  --text:#212529; --muted:#6c757d; --shadow:rgba(0,0,0,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Poppins',system-ui;background:var(--bg);color:var(--text)}
+
+/* ==== SIDEBAR ==== */
+.admin-sidebar{position:fixed;top:0;left:0;height:100vh;width:64px;
+  background:var(--card);border-right:1px solid var(--border);
+  box-shadow:2px 0 8px var(--shadow);transition:width .4s ease;overflow:hidden;z-index:1000;}
+.admin-sidebar:hover{width:220px}
+.sidebar-logo{display:flex;align-items:center;gap:10px;padding:14px;font-weight:700}
+.sidebar-logo i{font-size:26px;color:var(--red)}
+.logo-text{opacity:0;transition:.3s}.admin-sidebar:hover .logo-text{opacity:1}
+.sidebar-menu{list-style:none;padding:0;margin:20px 0}
+.nav-link{display:flex;align-items:center;gap:10px;padding:10px;color:var(--text);font-weight:600;border-radius:6px;transition:.2s}
+.nav-link:hover,.nav-link.active{background:rgba(245,197,24,.1);color:var(--red)}
+.nav-link i{font-size:20px;color:var(--gold)}
+.sidebar-footer{position:absolute;bottom:20px;width:100%;padding:0 10px}
+.logout-btn{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;font-weight:600;cursor:pointer;color:var(--text)}
+.logout-btn:hover{color:var(--red)}
+
+/* ==== MAIN ==== */
+.admin-wrap{margin-left:80px;padding:28px;transition:.4s}
+.admin-sidebar:hover ~ .admin-wrap{margin-left:230px}
+.admin-container{background:var(--card);border:1px solid var(--border);border-radius:16px;
+  box-shadow:0 6px 24px var(--shadow);padding:24px;max-width:1200px;margin:auto}
+.admin-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.admin-title h1{font-size:24px;color:var(--red);margin:0;display:flex;align-items:center;gap:6px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 14px;border-radius:10px;
+  border:1px solid var(--border);background:#fff;font-weight:600;cursor:pointer;transition:.2s}
+.btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ==== CARDS ==== */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center;
+  box-shadow:0 3px 10px var(--shadow);transition:.2s;opacity:0;transform:translateY(10px);animation:fadeUp .6s forwards}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+.card i{font-size:34px;color:var(--gold);margin-bottom:8px;transition:.2s}
+.card:hover i{color:var(--red);transform:scale(1.1)}
+.card .k{color:var(--muted);font-size:13px}
+.card .v{color:var(--red);font-weight:800;font-size:22px;margin-top:4px}
+
+/* ==== TABLE ==== */
+.admin-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px var(--shadow);font-size:14px;margin-top:14px}
+.admin-table th,.admin-table td{padding:12px 14px;text-align:center;border-bottom:1px solid var(--border)}
+.admin-table thead{background:#fafafa;color:var(--red);text-transform:uppercase;font-weight:700}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid var(--border)}
+.badge.ok{color:#28a745;border-color:#28a745}
+.badge.warn{color:#ffc107;border-color:#ffc107}
+
+/* ==== CHART BOX ==== */
+.chart-box{background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 14px var(--shadow)}
+
+@media(max-width:900px){.card-grid{grid-template-columns:repeat(2,1fr)}}
+
+.highlight-ticket {
+  background: rgba(245,197,24,0.25) !important;
+  box-shadow: inset 0 0 0 2px var(--gold);
+  animation: blinkHighlight 1.2s ease-in-out 3;
+}
+@keyframes blinkHighlight {
+  0%,100% { background: rgba(245,197,24,0.25); }
+  50% { background: rgba(245,197,24,0.5); }
+}
+@keyframes spin {to{transform:rotate(360deg)}}
+
+
+
+
+
+/* ===== Hiệu ứng hover & Top 3 bảng xếp hạng ===== */
+.admin-table tr:hover {
+  background: rgba(0, 0, 0, 0.04);
+  transition: background 0.25s ease;
+}
+
+/* Màu nền riêng cho Top 1–3 */
+.admin-table tbody tr:nth-child(1) {
+  background: rgba(255, 215, 0, 0.12);
+}
+.admin-table tbody tr:nth-child(2) {
+  background: rgba(192, 192, 192, 0.12);
+}
+.admin-table tbody tr:nth-child(3) {
+  background: rgba(205, 127, 50, 0.12);
+}
+
+/* Poster phóng to khi hover */
+.poster {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.poster:hover {
+  transform: scale(1.05);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+}
+
+/* Hiệu ứng fade-in khi bảng load */
+.admin-table {
+  animation: fadeInRank 0.6s ease;
+}
+@keyframes fadeInRank {
+  from {opacity: 0; transform: translateY(10px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+
+.top-medal {font-size:22px; vertical-align:middle;}
+.top-1 {color:#00b894;} /* xanh ngọc */
+.top-2 {color:#0984e3;} /* xanh dương */
+.top-3 {color:#fdcb6e;} /* vàng nhạt */
+
+.poster {
+  width:50px;height:70px;object-fit:cover;
+  border-radius:6px;border:1px solid var(--border);
+  box-shadow:0 1px 3px rgba(0,0,0,.2);
+  transition:transform .25s ease, box-shadow .25s ease;
+}
+.poster:hover {transform:scale(1.06);box-shadow:0 4px 10px rgba(0,0,0,.25);}
+
+/* Doanh thu: dải màu logic hơn */
+.rev-1 {color:#00b894;font-weight:700;}   /* cao nhất */
+.rev-2 {color:#0984e3;font-weight:700;}
+.rev-3 {color:#fdcb6e;font-weight:700;}
+.rev-normal {color:#636e72;}

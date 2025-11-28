@@ -1,0 +1,2228 @@
+  /* ======================================================
+    🎬 VIN-CINE STYLE SHEET - OPTIMIZED VERSION (v1.1)
+    Cấu trúc:
+    1️⃣ Biến toàn cục & font
+    2️⃣ Reset & cấu trúc chung
+    3️⃣ Header / Top menu
+    4️⃣ Trang chủ (Hero, Section, Cards)
+    5️⃣ Trang chi tiết phim
+    6️⃣ Lịch chiếu
+    7️⃣ Booking / Checkout / Login
+    8️⃣ Admin layout (sidebar, table, dashboard)
+    ====================================================== */
+
+  /* =========================================
+    🔹 KEYFRAMES: Hiệu ứng nền chạy ngang
+    ========================================= */
+  @keyframes bg-pan-left {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* =========================================
+    1️⃣ BIẾN MÀU VÀ FONT
+    ========================================= */
+  :root {
+    --red:#e50914;
+    --red-2:#b20710;
+    --bg:#0f0f12;
+    --card:#15161a;
+    --text:#f3f4f6;
+    --muted:#9aa0a6;
+    --gold:#f5c518;
+    --border:rgba(255,255,255,.08);
+  }
+
+  body {
+    margin:0;
+    font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    background:radial-gradient(1200px 800px at 80% -10%, #1b1d22 0%, #0f0f12 60%);
+    color:var(--text);
+  }
+  a {color:inherit; text-decoration:none}
+  img {max-width:100%; display:block}
+  .container {max-width:1200px; margin:0 auto; padding:0 16px}
+  * {box-sizing:border-box}
+
+  /* =========================================
+    2️⃣ HEADER / TOP MENU (CẢ NGƯỜI DÙNG & ADMIN)
+    ========================================= */
+  header.topmenu {
+    position:sticky; top:0; z-index:1000;
+    background:var(--card);
+    border-bottom:1px solid var(--border);
+    backdrop-filter:blur(8px);
+  }
+
+  .topmenu .nav {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    height:64px;
+  }
+
+  .brand {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-weight:800;
+    font-size:20px;
+    color:var(--text);
+  }
+  .brand svg {width:24px; height:24px; fill:var(--gold)}
+
+  .nav-links {
+    display:flex;
+    gap:20px;
+    font-weight:600;
+  }
+  .nav-links a {
+    color:var(--muted);
+    font-size:15px;
+    transition:color .2s;
+  }
+  .nav-links a:hover {color:var(--gold)}
+
+  .nav-cta {
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .nav-cta .btn {
+    font-weight:600;
+    color:var(--text);
+  }
+
+  /* Icon */
+  .nav-links a i,
+  .nav-cta .btn i {
+    font-size:16px;
+    color:#ccc;
+    transition:color .2s;
+  }
+  .nav-links a:hover i,
+  .nav-cta .btn:hover i {
+    color:#fff;
+  }
+
+  /* Mobile menu */
+  .mobile-menu nav {display:grid; gap:10px; padding:10px 0}
+  .mobile-menu .btn {text-align:left}
+
+  /* =========================================
+    3️⃣ BUTTON & INPUT CHUNG
+    ========================================= */
+  .btn {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    height:40px;
+    padding:0 14px;
+    border-radius:999px;
+    border:1px solid transparent;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .btn.primary {background:var(--red); color:#fff}
+  .btn.primary:hover {background:var(--red-2)}
+  .btn.ghost {
+    background:#171921;
+    border-color:#2b2f37;
+  }
+  .btn.ghost:hover {border-color:#3a404a}
+
+  .input {
+    height:44px;
+    padding:0 14px;
+    border-radius:12px;
+    border:1px solid #2b2f37;
+    background:#12131a;
+    color:var(--text);
+    min-width:260px;
+  }
+
+  /* =========================================
+    4️⃣ TRANG CHỦ - HERO, SECTION, GRID PHIM
+    ========================================= */
+  .hero {
+    position:relative;
+    isolation:isolate;
+  }
+  .hero-bg {
+    height: 56vh;
+    min-height: 420px;
+    display: grid;
+    place-items: center;
+    /* 🔸 Nền mạnh và sáng hơn */
+    background: linear-gradient(
+        270deg,
+        #ff3b3b,
+        #e50914,
+        #b20710,
+        #ffb347,
+        #e50914,
+        #b20710,
+        #ff3b3b
+    );
+    background-size: 400% 100%;
+    animation: bg-pan-left 12s ease-in-out infinite;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 0 60px rgba(229,9,20,.25) inset;
+  }
+
+
+  .hero-overlay {
+    position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(15,15,18,0) 0%, rgba(15,15,18,.85) 70%, #0f0f12 100%);
+  }
+  .hero-content {position:relative; z-index:1; text-align:center; padding:40px 16px}
+  .hero h1 {font-size:clamp(28px, 3.5vw, 56px); margin:0 0 10px}
+  .hero p {color:#d1d5db; margin:0 0 16px}
+
+  .grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:16px;
+  }
+  .card {
+    background:linear-gradient(180deg,#1a1c22,#14161b);
+    border:1px solid var(--border);
+    border-radius:16px;
+    overflow:hidden;
+    transition:.25s transform, .25s box-shadow;
+  }
+  .card:hover {transform:translateY(-4px); box-shadow:0 10px 24px rgba(0,0,0,.35)}
+  .poster {aspect-ratio:2/3; background:#0d0e12}
+  .poster img {width:100%; height:100%; object-fit:cover}
+  .card-body {padding:12px}
+  .title {font-weight:700; font-size:16px}
+  .meta {display:flex; gap:8px; color:var(--muted); font-size:12px; margin-top:4px}
+
+  /* =========================================
+    5️⃣ TRANG CHI TIẾT PHIM
+    ========================================= */
+  .movie-detail {
+    display:flex;
+    gap:30px;
+    max-width:1100px;
+    margin:40px auto;
+    padding:20px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:20px;
+    box-shadow:0 10px 30px rgba(0,0,0,.4);
+  }
+  .movie-detail .poster {flex:0 0 280px}
+  .movie-detail .poster img {border-radius:14px; width:100%}
+  .movie-detail .info {flex:1}
+  .movie-detail .info h1 {
+    font-size:32px;
+    font-weight:800;
+    margin:0 0 14px;
+  }
+  .movie-detail .info p {color:var(--muted); margin:6px 0}
+  .movie-detail .desc {margin-top:14px; line-height:1.6}
+
+  /* =========================================
+    6️⃣ LỊCH CHIẾU
+    ========================================= */
+  .showtimes {
+    max-width: 780px; 
+    width: 100%;
+    margin: 20px auto;
+    padding: 30px;
+    background: linear-gradient(180deg,#1a1c22,#14161b);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  }
+
+  .showtimes h2 {margin:0 0 12px; font-size:22px; color:var(--gold)}
+  .showtimes ul {list-style:none; padding:0; margin:0}
+  .showtimes li {
+    display:flex; justify-content:space-between;
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .showtimes li:last-child {border-bottom:none}
+
+  .btn-book {
+    background:var(--red);
+    color:#fff;
+    font-weight:600;
+    padding:8px 16px;
+    border-radius:999px;
+    transition:background .2s;
+  }
+  .btn-book:hover {background:var(--red-2)}
+
+  /* =========================================
+    7️⃣ BOOKING / CHECKOUT / LOGIN
+    ========================================= */
+  .theater, .checkout-wrapper, .login-wrapper {
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:0 8px 20px rgba(0,0,0,.45);
+  }
+  .btn-confirm, .btn-login {
+    background:var(--red);
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    padding:12px 20px;
+    font-weight:700;
+  }
+  .btn-confirm:hover, .btn-login:hover {background:var(--red-2)}
+  .booking-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+
+  .theater {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .theater h2 {
+    margin-bottom: 10px;
+    color: var(--gold);
+  }
+
+  .screen {
+    background: linear-gradient(to right, #888, #fff, #888);
+    color: #000;
+    font-weight: 700;
+    padding: 8px;
+    border-radius: 6px;
+    margin: 12px auto 20px;
+    width: 80%;
+  }
+
+  .seats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .seat-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .seat {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: #1e2025;
+    border: 1px solid #2b2f37;
+    color: var(--text);
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .seat:hover {
+    background: var(--gold);
+    color: #000;
+  }
+  .seat.selected {
+    background: var(--red);
+    border-color: var(--red);
+    color: #fff;
+  }
+  .seat.booked {
+    background: #333;
+    color: #777;
+    cursor: not-allowed;
+  }
+
+  .legend {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .legend .box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    margin-right: 5px;
+  }
+  .legend .free { background: #1e2025; border: 1px solid #2b2f37; }
+  .legend .booked { background: #333; }
+  .legend .selected { background: var(--red); }
+
+  .booking-summary {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+  }
+  .booking-summary h2 {
+    margin-bottom: 10px;
+    color: var(--gold);
+  }
+  .booking-summary p {
+    margin: 6px 0;
+    color: var(--text);
+  }
+  .booking-summary .total {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--gold);
+    margin-top: 12px;
+  }
+  .btn-book {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    background: var(--red);
+    color: #fff;
+    font-weight: 700;
+    border: none;
+    border-radius: 999px;
+    padding: 12px;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .btn-book:hover { background: var(--red-2); }
+
+  .checkout-wrapper {
+    max-width:600px;
+    margin:60px auto;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:0 10px 25px rgba(0,0,0,.45);
+    padding:40px 30px;
+    color:var(--text);
+    animation:fadeInUp .4s ease;
+  }
+
+  .checkout-wrapper h2 {
+    color:var(--gold);
+    margin-top:0;
+    margin-bottom:14px;
+    font-size:24px;
+  }
+
+  .checkout-wrapper h3 {
+    margin-top:24px;
+    color:var(--gold);
+    font-size:20px;
+  }
+
+  .checkout-wrapper p {
+    margin:8px 0;
+    line-height:1.5;
+    color:var(--muted);
+  }
+
+  .checkout-wrapper .total {
+    color:var(--gold);
+    font-weight:700;
+    font-size:18px;
+  }
+
+  .payment-methods {
+    display:grid;
+    gap:10px;
+    margin:16px 0 24px;
+  }
+  .payment-methods label {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 14px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:#181a20;
+    cursor:pointer;
+    transition:.2s;
+  }
+  .payment-methods label:hover {
+    border-color:var(--gold);
+    background:#1d1f26;
+  }
+  .payment-methods input {
+    accent-color:var(--gold);
+    transform:scale(1.2);
+  }
+
+  .btn-confirm {
+    display:inline-block;
+    background:var(--red);
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    padding:12px 28px;
+    font-weight:700;
+    cursor:pointer;
+    transition:background .25s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .btn-confirm:hover {
+    background:var(--red-2);
+  }
+
+  /* ✅ Căn giữa riêng nút xác nhận thanh toán */
+  .checkout-wrapper .btn-confirm {
+    display: block;
+    margin: 20px auto 0;
+  }
+
+  /* =========================================
+    8️⃣ ADMIN SIDEBAR + DASHBOARD + TABLE
+    ========================================= */
+  .admin-sidebar {
+    position:fixed; top:0; left:0; height:100vh;
+    width:64px;
+    background:var(--card);
+    border-right:1px solid var(--border);
+    padding:20px 0 20px 6px;
+    transition:width .4s;
+    overflow:hidden;
+    z-index:1200;
+  }
+  .admin-sidebar:hover {width:220px}
+
+  .sidebar-logo {
+    display:flex; align-items:center; gap:10px;
+    font-weight:800; font-size:18px; margin-bottom:30px; padding:0 6px;
+  }
+  .sidebar-logo i {font-size:28px; color:var(--gold)}
+  .logo-text {opacity:0; width:0; transition:opacity .3s,width .3s}
+  .admin-sidebar:hover .logo-text {opacity:1; width:auto}
+
+  .sidebar-menu {
+    list-style:none; padding:0; margin:0; display:flex; flex-direction:column; row-gap:.8rem;
+  }
+  .nav-link {
+    display:flex; align-items:center; gap:14px;
+    padding:10px 6px; border-radius:6px;
+    color:var(--text); font-weight:600;
+  }
+  .nav-link i {font-size:22px; color:var(--gold); transition:color .2s}
+  .nav-link:hover i {color:var(--red)}
+
+  .sidebar-footer {position:absolute; bottom:20px; left:0; width:100%; padding:0 10px}
+  .logout-btn {
+    display:flex; align-items:center; gap:14px;
+    border:none; background:transparent;
+    color:var(--text); font-weight:600; cursor:pointer; padding:10px 6px;
+    border-radius:6px;
+  }
+  .logout-btn:hover {background:var(--red); color:#fff}
+
+  /* Table */
+  .admin-table {
+    width:100%;
+    border-collapse:collapse;
+    background:#1b1d22;
+    border-radius:12px;
+    overflow:hidden;
+  }
+  .admin-table th, .admin-table td {
+    padding:12px 14px;
+    text-align:center;
+  }
+  .admin-table thead {
+    background:#20232a;
+    color:var(--gold);
+    font-weight:700;
+    text-transform:uppercase;
+  }
+  .admin-table tbody tr:hover {background:rgba(255,255,255,.05)}
+
+  @keyframes fadeInUp {
+    from {opacity:0; transform:translateY(15px)}
+    to {opacity:1; transform:translateY(0)}
+  }
+  /* =========================================
+    9️⃣ TRANG TÀI KHOẢN NGƯỜI DÙNG (ACCOUNT PAGE)
+    ========================================= */
+  .account-wrapper {
+    max-width: 1000px;
+    margin: 60px auto;
+    padding: 40px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    animation: fadeInUp .4s ease-out;
+  }
+  .account-wrapper h1 {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--gold);
+    margin-bottom: 24px;
+  }
+  .account-info p {
+    font-size: 15px;
+    margin: 6px 0;
+    color: var(--text);
+  }
+  .account-info strong {
+    color: var(--gold);
+  }
+  .account-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    background: #1b1d22;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .account-table th, .account-table td {
+    padding: 12px 14px;
+    text-align: center;
+    font-size: 15px;
+  }
+  .account-table thead {
+    background: #20232a;
+    color: var(--gold);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .account-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .2s;
+  }
+  .account-table tbody tr:hover {
+    background: rgba(255,255,255,.05);
+  }
+  .account-table a.movie-link {
+    color: var(--gold);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .account-table a.movie-link:hover {
+    color: var(--red);
+    text-decoration: underline;
+  }
+  .status-confirmed { color:#2ecc71; font-weight:600 }
+  .status-pending   { color:#f39c12; font-weight:600 }
+  .status-cancelled { color:#e74c3c; font-weight:600 }
+  .channel-online   { color:#00bfff; font-weight:600 }
+  .channel-offline  { color:#9acd32; font-weight:600 }
+  /* =========================================
+    FOOTER (VinCine)
+    ========================================= */
+  footer {
+    background: #0c0d10;
+    border-top: 1px solid var(--border);
+    color: #c9cdd3;
+    margin-top: 60px;
+    padding-top: 28px;
+    font-size: 15px;
+  }
+
+  .footer-cols {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 24px;
+    padding-bottom: 28px;
+  }
+  .footer-cols h4 {
+    color: var(--gold);
+    font-weight: 700;
+    margin: 0 0 10px;
+    font-size: 16px;
+  }
+  .footer-cols a {
+    display: block;
+    color: #9aa0a6;
+    padding: 6px 0;
+    transition: color .2s ease;
+  }
+  .footer-cols a:hover {
+    color: var(--gold);
+  }
+  .footer-desc {
+    color: #b6bac2;
+    line-height: 1.5;
+  }
+
+  .footer-copy {
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: #9aa0a6;
+    padding: 14px 0;
+    font-size: 14px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .footer-cols {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+  }
+  @media (max-width: 480px) {
+    .footer-cols {
+      grid-template-columns: 1fr;
+    }
+  }
+  /* =========================================
+    🔹 LỊCH CHIẾU - STYLE NÂNG CẤP (v1.2)
+    ========================================= */
+  .cinema-location {
+    color: var(--gold);
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .schedule-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .schedule-card {
+    flex: 0 0 200px;
+    background: #1b1d22;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    transition: 0.25s;
+  }
+  .schedule-card:hover {
+    border-color: var(--gold);
+    background: #1f2128;
+  }
+
+  .schedule-card p {
+    color: var(--text);
+    margin: 4px 0 10px;
+    font-weight: 600;
+  }
+
+  .time-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .time-btn {
+    background: var(--red);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background .2s;
+  }
+  .time-btn:hover {
+    background: var(--red-2);
+  }
+
+  .no-showtime {
+    text-align: center;
+    color: var(--muted);
+    padding: 20px 0;
+  }
+  /* =========================================
+    🔐 TRANG ĐĂNG NHẬP (LOGIN PAGE)
+    ========================================= */
+  .login-wrapper {
+    max-width: 420px;
+    margin: 80px auto;
+    padding: 40px 30px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    text-align: center;
+    animation: fadeInUp .4s ease;
+  }
+
+  .login-wrapper h2 {
+    color: var(--gold);
+    margin-bottom: 24px;
+    font-size: 24px;
+    font-weight: 800;
+  }
+
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .password-wrapper {
+    position: relative;
+  }
+  .password-wrapper i {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .forgot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+    font-size: 14px;
+  }
+  .forgot label {
+    color: var(--text);
+    cursor: pointer;
+  }
+  .forgot a {
+    color: var(--gold);
+    text-decoration: none;
+    transition: color .2s;
+  }
+  .forgot a:hover {
+    color: var(--red);
+  }
+
+  .btn-confirm {
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 20px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .25s;
+    margin-top: 12px;
+  }
+  .btn-confirm:hover {
+    background: var(--red-2);
+  }
+
+  .login-wrapper p {
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .login-wrapper p a {
+    color: var(--gold);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .login-wrapper p a:hover {
+    color: var(--red);
+  }
+  /* Fix kích thước input mật khẩu bằng input email */
+  .password-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  .password-wrapper input {
+    width: 100%;
+    padding-right: 38px; /* chừa chỗ cho icon con mắt */
+    box-sizing: border-box;
+  }
+  /* ===== LOGIN: fix icon con mắt trong ô mật khẩu ===== */
+  .password-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+  }
+
+  .password-wrapper input {
+    width: 100%;
+    padding-right: 40px; /* chừa chỗ cho icon */
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid #2b2f37;
+    background: #12131a;
+    color: var(--text);
+    font-size: 15px;
+  }
+
+  .password-wrapper i {
+    position: absolute;
+    right: 14px;
+    font-size: 20px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color .2s;
+  }
+
+  .password-wrapper i:hover {
+    color: var(--gold);
+  }
+  /* ========== VIN-CINE - CONFLICT SAFEGUARD ========== */
+  /* Namespace cơ bản cho các component nhạy cảm */
+  .vc-checkout-layout { display:flex; gap:32px; align-items:flex-start; max-width:1000px; margin:60px auto; padding:0 16px; }
+  .vc-checkout-left { flex:0 0 280px; }
+  .vc-checkout-left img { width:100%; border-radius:12px; display:block; }
+  .vc-checkout-wrapper { flex:1; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:28px; }
+
+  /* Button variants to avoid collisions */
+  .vc-btn { height:40px; padding:0 14px; border-radius:999px; display:inline-flex; align-items:center; gap:8px; }
+  .vc-btn.small { height:34px; padding:0 10px; font-size:14px; }
+  .vc-btn.block { display:block; width:100%; }
+
+  /* Footer safe: nếu muốn fixed, bật class .vc-footer-fixed trên body */
+  .vc-footer { background:#0c0d10; border-top:1px solid var(--border); color:#c9cdd3; padding:28px 0; }
+  body.vc-footer-fixed { min-height:100vh; display:flex; flex-direction:column; }
+  body.vc-footer-fixed main { flex:1; }
+  body.vc-footer-fixed .vc-footer { position:fixed; bottom:0; left:0; width:100%; z-index:100; }
+
+  /* Password eye fix */
+  .vc-password { position:relative; width:100%; }
+  .vc-password input { width:100%; padding-right:42px; height:44px; box-sizing:border-box; }
+  .vc-password .vc-eye { position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:var(--muted); font-size:18px; }
+
+  /* Small responsive touch */
+  @media (max-width:800px) {
+    .vc-checkout-layout { flex-direction:column; padding:0 12px; }
+    .vc-checkout-left { order: -1; width:100%; flex:0 0 auto; }
+  }
+  /* === Sticky footer: luôn dính sát mép dưới, không ảnh hưởng layout khác === */
+  html, body { height: 100%; }
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* giữ chiều cao tối thiểu toàn màn hình */
+  }
+  footer {
+    margin-top: auto; /* đẩy footer xuống đáy khi nội dung ngắn */
+  }
+  /* === Lọc phim - Trang Tất cả phim === */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .filter-btn {
+    background: #333;
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .filter-btn.active,
+  .filter-btn:hover {
+    background: var(--gold, #e0a800);
+    color: #000;
+  }
+
+  .all-movies .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+  }
+
+  .all-movies .card img {
+    width: 100%;
+    border-radius: 10px;
+  }
+
+    
+  /* === Submenu cho mục "Phim" === */
+  .nav-links .dropdown {
+    position: relative;
+  }
+
+  .nav-links .drop-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+
+  .nav-links .dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    min-width: 180px;
+    z-index: 200;
+  }
+
+  .nav-links .dropdown-content a {
+    display: block;
+    padding: 10px 14px;
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 14px;
+    transition: background .2s, color .2s;
+  }
+
+  .nav-links .dropdown-content a:hover {
+    background: var(--gold);
+    color: #000;
+  }
+
+  .nav-links .dropdown:hover .dropdown-content {
+    display: block;
+  }
+
+  /* ===================== TOP MOVIE BADGE ===================== */
+  .top-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    font-weight: 800;
+    font-size: 18px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    box-shadow: 0 3px 8px rgba(0,0,0,.4);
+  }
+  .card { position: relative; }
+
+  .top-1 { background: linear-gradient(145deg, #ffbf00, #d4a017); }
+  .top-2 { background: linear-gradient(145deg, #9e9e9e, #707070); }
+  .top-3 { background: linear-gradient(145deg, #cd7f32, #965a38); }
+
+
+  .account-wrapper {
+        max-width: 1000px;
+        margin: 60px auto;
+        padding: 40px;
+        background: var(--card);
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,.06);
+      }
+
+      /* ====== THÔNG TIN NGƯỜI DÙNG ====== */
+      .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+      .profile-info h1 {
+        color: var(--gold);
+        font-size: 24px;
+        margin: 0;
+      }
+      .profile-info p { margin: 4px 0; color: #ccc; }
+      .logout-btn {
+        background: var(--red);
+        color: #fff;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 10px;
+        font-weight: 600;
+      }
+
+      /* ====== BẢNG LỊCH SỬ ====== */
+      .account-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #1a1c22;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .account-table thead {
+        background: #20232a;
+        color: var(--gold);
+        text-transform: uppercase;
+      }
+      .account-table th, .account-table td {
+        padding: 12px 14px;
+        text-align: center;
+        border: 1px solid rgba(255,255,255,.06);
+      }
+      .account-table th:first-child, .account-table td:first-child {
+        text-align: left;
+      }
+      .account-table tbody tr:hover { background: rgba(255,255,255,.05); transition: 0.2s; }
+
+      a.movie-link {
+        color: var(--gold);
+        font-weight: 600;
+        text-decoration: none;
+      }
+      a.movie-link:hover { color: var(--red); text-decoration: underline; }
+
+      /* ======= TRẠNG THÁI ======= */
+      .status-confirmed {color:#2ecc71;font-weight:600;}
+      .status-pending {color:#f39c12;font-weight:600;}
+      .status-cancelled {color:#e74c3c;font-weight:600;}
+      .channel-online i {color:#00bfff;}
+      .channel-offline i {color:#9acd32;}
+
+      /* ======= PHÂN TRANG ======= */
+      .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 25px;
+        gap: 8px;
+      }
+      .pagination a {
+        color: #fff;
+        background: #20232a;
+        padding: 8px 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+      }
+      .pagination a.active { background: var(--gold); color: #000; }
+      .pagination a:hover { background: var(--red); }
+        select.input option.inactive {
+      color:#777;
+      background:#1a1a1a;
+    }
+
+    
+    .vc-loader {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(270deg, #0e0e11, #15161a, #0e0e11);
+    background-size: 200% 100%;
+    animation: bg-pan-left 10s linear infinite;
+    z-index: 99999;
+    transition: opacity .35s ease, visibility .35s ease;
+  }
+
+  .vc-loader.hidden {opacity: 0; visibility: hidden;}
+  .vc-spinner {
+    width: 56px; height: 56px;
+    border: 4px solid rgba(255,255,255,.18);
+    border-top-color: #e50914;
+    border-radius: 50%;
+    animation: vcspin 1s linear infinite;
+  }
+  .vc-text {
+    margin-top: 12px; color: #fff;
+    font: 600 12px/1.2 system-ui,Segoe UI,Roboto,Arial,sans-serif;
+    letter-spacing: .08em; text-transform: uppercase; opacity: .8;
+  }
+  .vc-wrap {text-align:center;transform:translateY(-8px)}
+  @keyframes vcspin {to{transform:rotate(360deg)}}
+  body.vc-lock {overflow:hidden;}
+
+      /* ⭐ Rating form thuần text */
+      .rating-form {
+        text-align: center;
+      }
+      .stars-input {
+        display: inline-flex;
+        flex-direction: row-reverse;
+        justify-content: center;
+        gap: 4px;
+      }
+      .stars-input input {
+        display: none;
+      }
+      .stars-input label {
+        font-size: 36px;
+        color: #777;
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+      /* Hover hoặc chọn → tô vàng tới sao đó */
+      .stars-input label:hover,
+      .stars-input label:hover ~ label,
+      .stars-input input:checked ~ label {
+        color: var(--gold);
+      }
+      /* =========================================
+    🔐 XÁC NHẬN OTP - VINCINE STYLE
+    ========================================= */
+  .otp-wrapper {
+    max-width: 420px;
+    margin: 100px auto;
+    padding: 40px 30px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    text-align: center;
+    animation: fadeInUp .4s ease;
+  }
+
+  .otp-wrapper h2 {
+    color: var(--gold);
+    margin-bottom: 24px;
+    font-size: 24px;
+    font-weight: 800;
+  }
+
+  .otp-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .otp-inputs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 10px 0 20px;
+  }
+
+  .otp-input {
+    width: 48px;
+    height: 56px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gold);
+    background: #12131a;
+    border: 2px solid var(--red);
+    border-radius: 10px;
+    outline: none;
+    transition: 0.2s;
+  }
+  .otp-input:focus {
+    border-color: var(--gold);
+    background: #1b1d22;
+  }
+
+  .btn-otp {
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 20px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .25s;
+  }
+  .btn-otp:hover {
+    background: var(--red-2);
+  }
+
+  .otp-hint {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 10px;
+  }
+
+  /* Hiệu ứng loading khi gửi form OTP */
+  .otp-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity .3s ease, visibility .3s ease;
+  }
+
+  .otp-overlay.active {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .loader {
+    width: 56px;
+    height: 56px;
+    border: 5px solid rgba(255,255,255,0.2);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  /* =========================================
+    🔐 RESET PASSWORD - VINCINE STYLE
+    ========================================= */
+  .reset-wrapper {
+    max-width: 420px;
+    margin: 100px auto;
+    padding: 40px 30px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    text-align: center;
+    animation: fadeInUp .5s ease;
+  }
+
+  .reset-wrapper h2 {
+    color: var(--gold);
+    margin-bottom: 26px;
+    font-size: 24px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .reset-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    animation: fadeIn .6s ease;
+  }
+
+  .reset-form .input {
+    width: 100%;
+    height: 44px;
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid #2b2f37;
+    background: #12131a;
+    color: var(--text);
+    font-size: 15px;
+    box-sizing: border-box;
+  }
+
+  /* Icon con mắt */
+  .password-wrapper {
+    position: relative;
+  }
+  .vc-eye {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    cursor: pointer;
+    transition: color .2s;
+    font-size: 18px;
+  }
+  .vc-eye:hover {
+    color: var(--gold);
+  }
+
+  /* Nút cập nhật */
+  .btn-confirm {
+    width: auto;             /* chỉ vừa nội dung */
+    min-width: 160px;        /* giữ kích thước tối thiểu */
+    align-self: center;      /* căn giữa trong form */
+    font-size: 15px;
+    padding: 10px 28px;
+    border-radius: 999px;
+  }
+  .btn-confirm:hover {
+    background: var(--red-2);
+    transform: translateY(-2px);
+  }
+
+  /* Overlay loading */
+  .otp-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity .3s ease, visibility .3s ease;
+  }
+  .otp-overlay.active {
+    visibility: visible;
+    opacity: 1;
+  }
+  .loader {
+    width: 56px;
+    height: 56px;
+    border: 5px solid rgba(255,255,255,0.2);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  /* Hiệu ứng */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+
+  .otp-inputs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    transition: transform 0.2s;
+  }
+  .otp-input {
+    width: 42px;
+    height: 52px;
+    text-align: center;
+    font-size: 20px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    transition: all 0.25s ease;
+  }
+  .otp-input:focus {
+    border-color: var(--gold, #d4af37);
+    outline: none;
+  }
+  .otp-input.error {
+    border-color: #e74c3c;
+    box-shadow: 0 0 6px rgba(231, 76, 60, 0.6);
+  }
+
+  /* animation khi nhập sai giống login */
+  .shake {
+    animation: shake 0.4s ease;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%,60% { transform: translateX(-8px); }
+    40%,80% { transform: translateX(8px); }
+  }
+  .error {
+    animation: flashRed 0.5s;
+  }
+  @keyframes flashRed {
+    0%   { background-color: rgba(255,0,0,0.1); }
+    100% { background-color: transparent; }
+  }
+
+  /* hiệu ứng khi đúng */
+  .otp-success {
+    animation: fadeOut 0.5s forwards;
+  }
+  @keyframes fadeOut {
+    to { opacity: 0; transform: scale(0.9); }
+  }
+
+  /* =====================================================
+    🎞️ VIN-CINE REEL LOADER - EXCLUSIVE SIGNATURE
+    ===================================================== */
+  .vc-loader {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, #0e0e11 0%, #000 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    transition: opacity .45s ease, visibility .45s ease;
+  }
+  .vc-loader.hidden {opacity:0;visibility:hidden;}
+  .vc-reel {
+    position: relative;
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, #1a1a1d 0%, #0e0e11 80%);
+    border: 4px solid rgba(245,197,24,0.3);
+    box-shadow: 0 0 25px rgba(229,9,20,.35), inset 0 0 10px rgba(245,197,24,.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: vcReelSpin 1.2s linear infinite;
+  }
+  .vc-reel-inner {
+    position: relative;
+    width: 60%;
+    height: 60%;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, #e50914 0%, #b20710 80%);
+    box-shadow: 0 0 16px rgba(229,9,20,.5);
+  }
+  .vc-reel-hole {
+    position: absolute;
+    inset: 35%;
+    background: #000;
+    border-radius: 50%;
+    box-shadow: inset 0 0 6px rgba(0,0,0,.7);
+  }
+  .vc-reel-strip {
+    position: absolute;
+    width: 8px;
+    height: 90px;
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--gold) 0 8px,
+      transparent 8px 16px
+    );
+    border-radius: 4px;
+    animation: vcReelGlow 1.2s ease-in-out infinite alternate;
+  }
+  .vc-reel-light {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 15px var(--gold);
+  }
+  .vc-text {
+    margin-top: 16px;
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(245,197,24,.6);
+    animation: vcFadeText 1.8s ease-in-out infinite alternate;
+  }
+
+  @keyframes vcReelSpin {to{transform:rotate(360deg)}}
+  @keyframes vcReelGlow {
+    from {opacity: .6; transform: scaleY(1);}
+    to {opacity: 1; transform: scaleY(1.1);}
+  }
+  @keyframes vcFadeText {
+    from {opacity:.7; transform:translateY(2px);}
+    to {opacity:1; transform:translateY(-2px);}
+  }
+  body.vc-lock {overflow:hidden;}
+
+  /* =========================================
+    🍿 COMBO SELECT PAGE - VinCine Style v2
+    ========================================= */
+  .combo-page {
+    max-width: 960px;
+    margin: 60px auto;
+    padding: 30px 20px;
+    text-align: center;
+    background: linear-gradient(180deg, #1a1c22, #121316);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(0,0,0,.45);
+    animation: fadeInUp .4s ease;
+  }
+
+  .combo-header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--gold);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .combo-header p {
+    color: var(--muted);
+    font-size: 15px;
+    margin-bottom: 28px;
+  }
+
+  .combo-form {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+
+  .combo-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 24px;
+    justify-items: center;
+  }
+
+  .combo-item input {
+    display: none;
+  }
+
+  .combo-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    width: 100%;
+    cursor: pointer;
+    transition: .25s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-bottom: 14px;
+  }
+  .combo-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-6px);
+    box-shadow: 0 6px 18px rgba(245,197,24,.25);
+  }
+  .combo-item input:checked + .combo-card {
+    border-color: var(--red);
+    box-shadow: 0 0 0 2px var(--red);
+  }
+
+  .combo-thumb img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .combo-info {
+    padding: 12px 10px 4px;
+  }
+  .combo-info h3 {
+    color: var(--gold);
+    font-weight: 700;
+    margin: 4px 0 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .combo-info p {
+    color: var(--muted);
+    font-size: 14px;
+    min-height: 36px;
+    margin: 0 0 6px;
+  }
+  .combo-price {
+    color: var(--red);
+    font-weight: 700;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .combo-footer {
+    margin-top: 12px;
+  }
+  .combo-footer .btn {
+    font-size: 16px;
+    padding: 12px 24px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .combo-footer .btn i {
+    font-size: 18px;
+  }
+  .qty-control {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    margin-top:10px;
+  }
+  .qty-btn {
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    border:1px solid var(--border);
+    background:#1a1c22;
+    color:#fff;
+    font-weight:700;
+    font-size:18px;
+    cursor:pointer;
+    transition:.2s;
+  }
+  .qty-btn:hover { background:var(--red); }
+  .qty-value {
+    min-width:30px;
+    text-align:center;
+    font-weight:600;
+    color:var(--gold);
+  }
+  .total-display {
+    margin-top:16px;
+    font-size:18px;
+    font-weight:700;
+    color:var(--gold);
+  }
+  /* ===== Booking Success Page ===== */
+  .success-body {
+    background: var(--bg,#0d0d0d);
+    color: var(--text,#f1f1f1);
+    font-family: 'Poppins', system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .success-container {
+    max-width: 880px;
+    width: 100%;
+  }
+
+  .success-card {
+    background: var(--card,#1b1b1b);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    overflow: hidden;
+    padding: 28px 40px;
+    animation: fadeUp .5s ease;
+  }
+
+  @keyframes fadeUp {
+    from {opacity:0; transform:translateY(10px);}
+    to {opacity:1; transform:translateY(0);}
+  }
+
+  .success-header {
+    text-align: center;
+    border-bottom: 1px solid var(--border,rgba(255,255,255,.1));
+    padding-bottom: 20px;
+    margin-bottom: 25px;
+  }
+  .success-header i {
+    font-size: 54px;
+    color: var(--green,#00e676);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .success-header h2 {
+    font-size: 26px;
+    margin: 6px 0;
+    color: var(--gold,#f5c518);
+  }
+  .success-header p {
+    color: var(--muted,#aaa);
+    font-size: 15px;
+  }
+
+  .success-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .success-info {
+    flex: 1;
+    min-width: 280px;
+  }
+  .success-info p {
+    font-size: 15px;
+    margin: 8px 0;
+  }
+  .success-info i {
+    color: var(--gold,#f5c518);
+    margin-right: 6px;
+  }
+  .price-line span {
+    color: var(--red,#e50914);
+    font-weight: 600;
+  }
+
+  .btn-home {
+    display: inline-block;
+    margin-top: 16px;
+    background: var(--red,#e50914);
+    color: #fff;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 999px;
+    text-decoration: none;
+    transition: background .2s ease, transform .2s ease;
+  }
+  .btn-home:hover {
+    background: var(--red-2,#b20710);
+    transform: translateY(-1px);
+  }
+
+  .success-qr {
+    text-align: center;
+  }
+  .success-qr img {
+    width: 220px;
+    height: 220px;
+    border: 6px solid #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.5);
+  }
+  .success-qr p {
+    margin-top: 10px;
+    color: var(--muted,#aaa);
+    font-size: 13px;
+  }
+
+
+  /* ===== Page-load + Stagger animation (non-breaking) ===== */
+  .will-animate { opacity: 0; transform: translateY(16px); will-change: opacity, transform; }
+  .will-animate.show { animation: vcFadeUp .6s ease forwards; animation-delay: var(--d,0s); }
+
+  /* nếu bạn đã có @keyframes fadeInUp thì bỏ block dưới đi */
+  @keyframes vcFadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+
+  /* =========================================
+    🎥 GIỚI THIỆU - ABOUT PAGE (VinCine)
+    ========================================= */
+  .about-header {
+    text-align: center;
+    background: linear-gradient(180deg, #1a1c22 0%, #0f0f12 100%);
+    padding: 80px 20px 60px;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0,0,0,.4);
+  }
+  .about-header h1 {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--gold);
+    margin: 0 0 10px;
+  }
+  .about-header p {
+    color: var(--muted);
+    font-size: 16px;
+    max-width: 680px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ====== SECTIONS ====== */
+  .about-section {
+    max-width: 900px;
+    margin: 60px auto;
+    padding: 0 20px;
+    animation: fadeInUp .5s ease;
+  }
+  .about-section h2 {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 24px;
+    margin-bottom: 14px;
+    border-left: 4px solid var(--red);
+    padding-left: 10px;
+  }
+  .about-section p {
+    color: var(--text);
+    line-height: 1.7;
+    margin-bottom: 12px;
+    font-size: 15px;
+  }
+
+  /* ====== HIGHLIGHTS ====== */
+  .about-highlight {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
+    gap: 24px;
+    margin-top: 24px;
+  }
+  .highlight-card {
+    background: linear-gradient(180deg,#1a1c22,#14161b);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    text-align: center;
+    padding: 24px 18px;
+    transition: 0.3s;
+    box-shadow: 0 4px 16px rgba(0,0,0,.3);
+  }
+  .highlight-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--gold);
+    box-shadow: 0 8px 20px rgba(245,197,24,.25);
+  }
+  .highlight-card i {
+    font-size: 40px;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+  .highlight-card h3 {
+    color: var(--text);
+    font-weight: 700;
+    font-size: 18px;
+    margin: 6px 0 10px;
+  }
+  .highlight-card p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ====== RESPONSIVE ====== */
+  @media (max-width:600px) {
+    .about-header { padding: 60px 16px 40px; }
+    .about-header h1 { font-size: 28px; }
+    .about-section { margin: 40px auto; }
+  }
+
+
+
+
+  /* =========================================
+    🔐 AUTH PAGE - LOGIN / REGISTER (VinCine)
+    ========================================= */
+  .vc-auth-body {
+    display:flex;justify-content:center;align-items:center;
+    min-height:100vh;background:var(--bg);color:var(--text);
+  }
+  .vc-auth-container {
+    position:relative;width:850px;height:550px;background:var(--card);
+    border-radius:30px;box-shadow:0 0 40px rgba(0,0,0,.5);overflow:hidden;
+  }
+  .vc-auth-container h1{font-size:34px;margin-bottom:14px;color:var(--gold)}
+  .vc-auth-container p{font-size:14.5px;margin:15px 0;color:var(--muted)}
+  .vc-auth-form{width:100%}
+  .vc-form-box{
+    position:absolute;right:0;width:50%;height:100%;
+    background:var(--card);display:flex;flex-direction:column;
+    justify-content:center;align-items:center;padding:40px;
+    transition:.6s ease-in-out 1.2s,visibility 0s 1s;z-index:1;
+  }
+  .vc-auth-container.active .vc-form-box{right:50%}
+  .vc-form-box.register{visibility:hidden}
+  .vc-auth-container.active .vc-form-box.register{visibility:visible}
+
+  .vc-input-box{position:relative;margin:20px 0;width:100%}
+  .vc-input-box input{
+    width:100%;padding:13px 50px 13px 20px;border:none;outline:none;
+    border-radius:8px;background:#1f2024;color:var(--text);font-size:15px;
+  }
+  .vc-input-box input::placeholder{color:var(--muted)}
+  .vc-input-box i{
+    position:absolute;right:20px;top:50%;transform:translateY(-50%);
+    font-size:20px;color:var(--muted);cursor:pointer;
+  }
+  .vc-forgot{margin:-10px 0 20px;width:100%;text-align:right}
+  .vc-forgot a{font-size:14px;color:var(--gold)}
+  .vc-btn-main{
+    width:100%;height:48px;border:none;border-radius:8px;cursor:pointer;
+    background:var(--red);color:#fff;font-weight:600;font-size:16px;transition:.3s;
+  }
+  .vc-btn-main:hover{background:var(--red-2)}
+  .vc-social{display:flex;justify-content:center;margin-top:10px}
+  .vc-social a{
+    display:inline-flex;padding:10px;border:2px solid rgba(255,255,255,.1);
+    border-radius:8px;font-size:22px;color:var(--text);margin:0 8px;
+    transition:.2s;
+  }
+  .vc-social a:hover{border-color:var(--gold);color:var(--gold)}
+  .vc-toggle-box{position:absolute;width:100%;height:100%}
+  .vc-toggle-box::before{
+    content:'';position:absolute;left:-250%;width:300%;height:100%;
+    background:var(--red);border-radius:150px;z-index:2;transition:1.8s ease-in-out;
+  }
+  .vc-auth-container.active .vc-toggle-box::before{left:50%}
+  .vc-toggle-panel{
+    position:absolute;width:50%;height:100%;color:#fff;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    z-index:2;transition:.6s ease-in-out;
+  }
+  .vc-toggle-panel.toggle-left{left:0;transition-delay:1.2s}
+  .vc-auth-container.active .vc-toggle-panel.toggle-left{left:-50%;transition-delay:.6s}
+  .vc-toggle-panel.toggle-right{right:-50%;transition-delay:.6s}
+  .vc-auth-container.active .vc-toggle-panel.toggle-right{right:0;transition-delay:1.2s}
+  .vc-toggle-panel p{margin-bottom:20px;color:#eee}
+  .vc-toggle-panel .vc-btn-outline{
+    width:160px;height:46px;background:transparent;border:2px solid #fff;
+    border-radius:999px;color:#fff;font-weight:600;cursor:pointer;
+  }
+
+  @media(max-width:650px){
+    .vc-auth-container{width:90%;height:600px}
+    .vc-form-box{width:100%;height:70%;bottom:0}
+    .vc-auth-container.active .vc-form-box{right:0;bottom:30%}
+    .vc-toggle-box::before{
+      left:0;top:-270%;width:100%;height:300%;border-radius:20vw;
+    }
+    .vc-auth-container.active .vc-toggle-box::before{left:0;top:70%}
+    .vc-toggle-panel{width:100%;height:30%}
+    .vc-toggle-panel.toggle-left{top:0}
+    .vc-toggle-panel.toggle-right{bottom:-30%}
+    .vc-auth-container.active .vc-toggle-panel.toggle-right{bottom:0}
+  }
+  .vc-auth-container {
+    position: relative;
+    margin: 0 auto;          /* căn giữa ngang */
+    top: 40px;               /* giữ nguyên độ lệch xuống dưới nếu bạn thích */
+    left: 50%;
+    transform: translateX(-50%);  /* căn giữa CHUẨN */
+  }
+
+  /* FORCE CENTER AUTH PAGE WITHOUT BREAKING ANIMATION */
+  .vc-auth-body {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important; /* giữ nguyên đang cách top 40px */
+    padding-top: 40px;
+  }
+
+  .vc-auth-container {
+    left: 0 !important;
+    transform: none !important;
+    margin: 0 auto !important;
+  }
+
+
+  /* ============================
+    🎥 LAYOUT GHẾ – MÀN HÌNH (Movie Detail)
+    ============================ */
+  .show-seat-layout {
+    margin: 40px auto 0;
+    max-width: 740px;
+    background: #1b1d22;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 26px;
+    text-align: center;
+  }
+
+  .show-seat-screen {
+    background: linear-gradient(to right, #ccc, #fff, #ccc);
+    color: #000;
+    font-weight: 700;
+    padding: 8px 0;
+    border-radius: 6px;
+    width: 80%;
+    margin: 0 auto 20px;
+    text-transform: uppercase;
+  }
+
+  .show-seat-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .show-seat-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .show-seat {
+    width: 32px;
+    height: 32px;
+    background: #12131a;
+    border: 1px solid #2b2f37;
+    border-radius: 6px;
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .show-seat.booked {
+    background: #333;
+    color: #777;
+  }
+
+  .show-seat.available {
+    background: #1e2025;
+  }
+
+  .show-seat-layout-legend {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .show-seat-layout-legend .box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  .box-free { background: #1e2025; border: 1px solid #2b2f37; }
+  .box-booked { background: #333; }
+  .box-you { background: var(--red); }
+
+  /* ================================
+    🎬 BOOKING PAGE (VinCine Style)
+    ================================ */
+
+  .booking-layout {
+    display: flex;
+    gap: 40px;
+    padding: 40px;
+    align-items: flex-start;
+  }
+
+  .theater {
+    flex: 2;
+    text-align: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+  }
+
+  .theater h2 {
+    margin-bottom: 10px;
+    color: var(--gold);
+  }
+
+  .screen {
+    background: linear-gradient(to right, #888, #fff, #888);
+    color: #000;
+    font-weight: 700;
+    padding: 8px;
+    border-radius: 6px;
+    margin: 12px auto 20px;
+    width: 80%;
+  }
+
+  .seats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .seat-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .seat {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: #1e2025;
+    border: 1px solid #2b2f37;
+    color: var(--text);
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .seat:hover {
+    background: var(--gold);
+    color: #000;
+  }
+
+  .seat.selected {
+    background: var(--red);
+    border-color: var(--red);
+    color: #fff;
+  }
+
+  .seat.booked {
+    background: #333;
+    color: #777;
+    cursor: not-allowed;
+  }
+
+  .legend {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .legend .box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    margin-right: 5px;
+  }
+
+  .legend .free { background: #1e2025; border: 1px solid #2b2f37; }
+  .legend .booked { background: #333; }
+  .legend .selected { background: var(--red); }
+
+  .booking-summary {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+  }
+
+  .booking-summary h2 {
+    margin-bottom: 10px;
+    color: var(--gold);
+  }
+
+  .booking-summary p {
+    margin: 6px 0;
+    color: var(--text);
+  }
+
+  .booking-summary .total {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--gold);
+    margin-top: 12px;
+  }
+
+  .btn-book {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    background: var(--red);
+    color: #fff;
+    font-weight: 700;
+    border: none;
+    border-radius: 999px;
+    padding: 12px;
+    cursor: pointer;
+    transition: background .2s;
+  }
+
+  .btn-book:hover {
+    background: var(--red-2);
+  }
+
+  .vc-google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vc-google .g_id_signin > div {
+  border-radius: 50% !important;
+  overflow: hidden;
+}

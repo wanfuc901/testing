@@ -1,0 +1,234 @@
+:root {
+  --bg:#f8f9fa;
+  --card:#ffffff;
+  --red:#e50914;
+  --gold:#f5c518;
+  --text:#212529;
+  --muted:#6c757d;
+  --border:#dee2e6;
+  --shadow:rgba(0,0,0,.08);
+}
+
+/* ===== Calendar Schedule ===== */
+.sched-wrap{
+  padding:24px 0;
+}
+.sched-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:12px;
+}
+.sched-head h1{
+  color:var(--red);
+  font-size:22px;
+  font-weight:700;
+}
+.sched-head .tools{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.sched-head button{
+  background:var(--card);
+  color:var(--text);
+  border:1px solid var(--border);
+  padding:8px 12px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:600;
+  transition:.2s;
+}
+.sched-head button:hover{
+  border-color:var(--gold);
+  color:var(--gold);
+}
+
+.calendar-grid{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.cal-row{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:8px;
+}
+.cal-cell{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px;
+  min-height:110px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  box-shadow:0 2px 8px var(--shadow);
+  transition:.2s;
+}
+.cal-cell:hover{
+  transform:translateY(-2px);
+  box-shadow:0 4px 12px var(--shadow);
+}
+.cal-cell .date{
+  color:var(--muted);
+  font-weight:600;
+}
+.cal-cell .count{
+  color:var(--text);
+  font-size:13px;
+}
+.cal-cell .btnDay{
+  margin-top:auto;
+  align-self:flex-start;
+  background:var(--red);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:6px 10px;
+  cursor:pointer;
+  font-weight:600;
+  transition:.2s;
+}
+.cal-cell .btnDay:hover{
+  background:var(--gold);
+  color:#000;
+}
+
+/* ===== Drawer (Chi tiết ngày) ===== */
+.drawer{
+  position:fixed;
+  top:0;
+  right:-460px;
+  width:440px;
+  height:100vh;
+  background:var(--card);
+  border-left:1px solid var(--border);
+  transition:right .25s;
+  display:flex;
+  flex-direction:column;
+  box-shadow:-4px 0 20px var(--shadow);
+  z-index:2000;
+}
+.drawer.open{ right:0; }
+
+.drawer-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px 14px;
+  border-bottom:1px solid var(--border);
+}
+.drawer-head strong{
+  color:var(--text);
+  font-size:16px;
+}
+.drawer-head button{
+  background:#fff;
+  color:var(--text);
+  border:1px solid var(--border);
+  padding:6px 10px;
+  border-radius:8px;
+  cursor:pointer;
+  transition:.2s;
+  font-weight:600;
+}
+.drawer-head button:hover{
+  border-color:var(--gold);
+  color:var(--gold);
+}
+
+.drawer-scroller{
+  padding:12px 14px;
+  overflow:auto;
+}
+
+/* ===== Bảng trong Drawer ===== */
+.vin-table{
+  width:100%;
+  border-collapse:collapse;
+  margin-bottom:12px;
+  background:#fff;
+  box-shadow:0 2px 10px var(--shadow);
+}
+.vin-table th,
+.vin-table td{
+  border:1px solid var(--border);
+  padding:8px;
+  text-align:left;
+  color:var(--text);
+  font-size:14px;
+}
+.vin-table th{
+  background:#fafafa;
+  font-weight:700;
+  color:var(--red);
+}
+
+/* ===== Form trong Drawer ===== */
+.form-row .row{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.form-row input{
+  background:#fff;
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:8px 10px;
+  transition:.2s;
+}
+.form-row input:focus{
+  outline:none;
+  border-color:var(--gold);
+  box-shadow:0 0 0 2px rgba(245,197,24,.25);
+}
+.form-row button{
+  background:var(--red);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:8px 12px;
+  cursor:pointer;
+  font-weight:600;
+  transition:.2s;
+}
+.form-row button:hover{
+  background:var(--red-2);
+}
+
+/* ===== Ô hôm nay ===== */
+.cal-cell.today{
+  background:rgba(245,197,24,0.15);
+  border:1px solid var(--gold);
+  box-shadow:0 0 8px rgba(245,197,24,0.4);
+}
+
+/* ===== Nút trở về admin ===== */
+.back-admin{
+  background:var(--gold);
+  color:#000;
+  border:none;
+  border-radius:6px;
+  padding:6px 12px;
+  font-weight:600;
+  cursor:pointer;
+  transition:.2s;
+}
+.back-admin:hover{
+  background:#ffe67a;
+}
+
+/* ===== Select phim ===== */
+.movie-select option.inactive{
+  color:#999;
+  background:#fff;
+}
+    /* Giao diện chọn phim trực quan */
+    .movie-select { width:220px; background:#14161a; color:#eee; border:1px solid #333; border-radius:8px; padding:6px; }
+    .movie-option { display:flex; align-items:center; gap:8px; }
+    .movie-option img { width:28px; height:38px; border-radius:4px; object-fit:cover; }
+    .poster-mini { width:50px; height:70px; border-radius:8px; object-fit:cover; }
+    .room-select, .time-input, .reason-input { background:#14161a; color:#eee; border:1px solid #333; border-radius:8px; padding:6px; }
+    select:focus, input:focus { outline:none; border-color:#d4af37; }

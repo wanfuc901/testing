@@ -1,0 +1,6 @@
+|   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   +-- auto 
+          auto.cjs
+          auto.d.ts
+          auto.js
+          package.json
+          VincentCinemas_structure.txt

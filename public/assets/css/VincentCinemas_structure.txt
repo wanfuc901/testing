@@ -1,0 +1,14 @@
+|   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   +-- css 
+        admin.css
+        admin_scheduler.css
+        chart.css
+        dataTables.bootstrap5.min.css
+        style.css
+        VincentCinemas_structure.txt
+      [css]
+        admin.css
+        admin_scheduler.css
+        chart.css
+        dataTables.bootstrap5.min.css
+        style.css
+        VincentCinemas_structure.txt

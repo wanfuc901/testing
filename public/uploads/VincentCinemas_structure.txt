@@ -1,0 +1,4 @@
+|   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   +-- uploads 
+      VincentCinemas_structure.txt
+    [uploads]
+      VincentCinemas_structure.txt
