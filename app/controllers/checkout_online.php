@@ -61,7 +61,7 @@ if ($method === 'cash') {
     $insertPay = $conn->prepare("
         INSERT INTO payments
         (user_id, method, amount, status, provider_txn_id, paid_at)
-        VALUES (?, 'offline', ?, 'success', ?, NOW())
+        VALUES (?, 'offline', ?, 'pending', ?, NOW())
     ");
 
     $insertPay->bind_param("ids", $user_id, $totalPrice, $txn);

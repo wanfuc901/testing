@@ -98,8 +98,6 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
                 UPDATE tickets
                 SET paid=1,
                     status='pending',
-                    confirmed_by=?,
-                    confirmed_at=?,
                     price=?
                 WHERE ticket_id=?
             ";
@@ -111,9 +109,7 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
                 $tid = (int)$t['ticket_id'];
 
                 $stmtU->bind_param(
-                    "ssdi",
-                    $confirmed_by,
-                    $now,
+                    "di",
                     $ticket_price,
                     $tid
                 );
@@ -137,8 +133,8 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
             $sqlT = "
                 INSERT INTO tickets
                 (showtime_id, seat_id, user_id, payment_id, channel,
-                 paid, status, confirmed_by, confirmed_at, price)
-                VALUES (?, ?, ?, ?, 'online', 1, 'confirmed', ?, ?, ?)
+                 paid, status, price)
+                VALUES (?, ?, ?, ?, 'online', 1, 'pending', ?)
             ";
 
             $stmtT = $conn->prepare($sqlT);
@@ -147,13 +143,11 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
             foreach ($seat_ids as $sid) {
 
                 $stmtT->bind_param(
-                    "iiiissd",
+                    "iiiid",
                     $showtime_id,
                     $sid,
                     $user_id,
                     $payment_id,
-                    $confirmed_by,
-                    $now,
                     $ticket_price
                 );
                 $stmtT->execute();
@@ -202,7 +196,7 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
 
         /* REALTIME */
         emit_seat_booked_done($showtime_id, $emitSeats);
-        emit_payment_update($payment_id, 'success');
+        emit_payment_update($payment_id, 'pending');
 
         return ["status"=>"ok","ticket_ids"=>$ticket_ids];
 
@@ -211,3 +205,4 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
         throw $e;
     }
 }
+
