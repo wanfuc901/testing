@@ -1,6 +1,6 @@
 ==============================================
   PROJECT STRUCTURE EXPORT
-  Time: Fri 11/28/2025 22:20:09.50
+  Time: Mon 12/01/2025  3:06:31.54
   Computer: HOANGPHUCPC
   User: Hoang Phuc
 ==============================================
@@ -11,29 +11,9 @@ D:.
 |   .gitattributes
 |   ept.bat
 |   index.php
+|   README.md
 |   structure.txt
 |   
-+---.tmp.driveupload
-|       79975
-|       79977
-|       79979
-|       79981
-|       79983
-|       79987
-|       79989
-|       79991
-|       79993
-|       79997
-|       79999
-|       80003
-|       80005
-|       80009
-|       80011
-|       80013
-|       80017
-|       80021
-|       80023
-|       
 +---admin
 |       combos.php
 |       dashboard.php
