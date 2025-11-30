@@ -12,7 +12,7 @@
 ---
 
 ## 📘 Giới thiệu
-**Testing Web Application** là một dự án được xây dựng nhằm thực hành toàn bộ quy trình phát triển ứng dụng web từ frontend → backend → database → deploy local.  
+**Vincent Cinemas Application** là một dự án được xây dựng nhằm thực hành toàn bộ quy trình phát triển ứng dụng web từ frontend → backend → database → deploy local.  
 Dự án giúp người học rèn luyện kỹ năng:
 
 - Phát triển website chạy ổn định bằng PHP & MySQL  
@@ -43,7 +43,7 @@ Dự án phù hợp làm **bài tập lớn**, **đồ án tốt nghiệp**, ho�
 - Quản lý nội dung / dữ liệu dễ dàng  
 
 ### ⚡ Realtime (Optional)
-- Tích hợp Socket.io cho các tính năng realtime thử nghiệm
+- Tích hợp Socket.io cho các tính năng realtime
 
 ---
 
@@ -63,7 +63,7 @@ Dự án phù hợp làm **bài tập lớn**, **đồ án tốt nghiệp**, ho�
 ## 📂 Cấu trúc thư mục
 
 ```text
-testing/
+Vincent Cinemas/
 │── admin/                  # Admin Panel
 │── app/                    # Config, controllers, core logic
 │── helpers/                # Helper PHP utilities
