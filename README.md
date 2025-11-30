@@ -1,53 +1,68 @@
-🎬 Testing Project – Web Application
+# 🎬 Testing Project – Web Application  
+**Author:** Phạm Hoàng Phúc  
+**Trường:** Cao đẳng Cộng đồng Sóc Trăng – Khoa Kinh tế  
 
-Author: Phạm Hoàng Phúc
-Trường: Cao đẳng Cộng đồng Sóc Trăng – Khoa Kinh tế
+<p align="left">
+  <img src="https://img.shields.io/badge/PHP-7.4%2B-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/MySQL-vincine-orange?style=flat-square" />
+  <img src="https://img.shields.io/badge/Version%20Control-GitHub-black?style=flat-square" />
+  <img src="https://img.shields.io/badge/Status-Active-success?style=flat-square" />
+</p>
 
-<p align="left"> <img src="https://img.shields.io/badge/PHP-7.4%2B-blue?style=flat-square" /> <img src="https://img.shields.io/badge/MySQL-vincine-orange?style=flat-square" /> <img src="https://img.shields.io/badge/Version%20Control-GitHub-black?style=flat-square" /> <img src="https://img.shields.io/badge/Status-Active-success?style=flat-square" /> </p>
-📘 Giới thiệu
+---
 
-Dự án Testing Web Application được xây dựng nhằm thực hành quy trình phát triển một ứng dụng web hoàn chỉnh, bao gồm frontend, backend, kết nối cơ sở dữ liệu và quản lý mã nguồn bằng GitHub.
+## 📘 Giới thiệu
+**Testing Web Application** là một dự án được xây dựng nhằm thực hành toàn bộ quy trình phát triển ứng dụng web từ frontend → backend → database → deploy local.  
+Dự án giúp người học rèn luyện kỹ năng:
 
-Mục tiêu:
+- Phát triển website chạy ổn định bằng PHP & MySQL  
+- Thành thạo thao tác CRUD  
+- Tổ chức thư mục theo chuẩn MVC đơn giản  
+- Sử dụng Git/GitHub để quản lý mã nguồn  
+- Thử nghiệm thêm tính năng realtime bằng Socket.io  
 
-Xây dựng website chạy ổn định
+Dự án phù hợp làm **bài tập lớn**, **đồ án tốt nghiệp**, hoặc **portfolio cá nhân**.
 
-Thành thạo thao tác CRUD với MySQL
+---
 
-Áp dụng mô hình tách thư mục rõ ràng
+## ✨ Tính năng nổi bật
 
-Sử dụng Git/GitHub để quản lý dự án
+### 🎨 Frontend
+- HTML5 + CSS3 tùy chỉnh  
+- JavaScript xử lý thao tác người dùng  
+- Giao diện đơn giản, dễ mở rộng  
 
-✨ Tính năng nổi bật
-Frontend
+### 🧩 Backend (PHP)
+- Xử lý request, routing cơ bản  
+- Chức năng CRUD đầy đủ  
+- Kết nối MySQL và truy vấn bảo mật hơn  
+- Các helper được chia theo nghiệp vụ  
 
-HTML5 + CSS3 tùy chỉnh
+### 🔐 Admin Panel
+- Giao diện quản trị độc lập  
+- Quản lý nội dung / dữ liệu dễ dàng  
 
-JavaScript xử lý tương tác người dùng
+### ⚡ Realtime (Optional)
+- Tích hợp Socket.io cho các tính năng realtime thử nghiệm
 
-Backend (PHP)
+---
 
-Xử lý request, routing đơn giản
+## 🧰 Tech Stack
 
-CRUD với MySQL
+| Thành phần      | Công nghệ |
+|-----------------|-----------|
+| Frontend        | HTML5, CSS3, JavaScript |
+| Backend         | PHP 7+ |
+| Database        | MySQL (DB: **vincine**) |
+| Realtime        | Socket.io (tùy chọn) |
+| Thư viện        | PHPMailer, Composer vendor |
+| Version Control | Git + GitHub |
 
-Helper functions tách riêng theo nghiệp vụ
+---
 
-Admin Panel
+## 📂 Cấu trúc thư mục
 
-Khu vực quản trị độc lập
-
-Quản lý nội dung cơ bản
-
-🧰 Tech Stack
-Thành phần	Công nghệ
-Frontend	HTML5, CSS3, JavaScript
-Backend	PHP 7+
-Database	MySQL (DB: vincine)
-Realtime	Socket.io (optional)
-Thư viện	PHPMailer, Composer vendor
-Version Control	Git + GitHub
-📂 Project Structure
+```text
 testing/
 │── admin/                  # Admin Panel
 │── app/                    # Config, controllers, core logic
@@ -56,58 +71,5 @@ testing/
 │── socket.io/              # Realtime server (optional)
 │── vendor/                 # Composer dependencies
 │── index.php               # App entry point
-│── structure.txt           # Project structure description
-└── README.md               # This documentation
-
-🚀 Cài đặt & chạy thử
-1. Clone repository
-git clone https://github.com/wanfuc901/testing.git
-
-2. Tạo database
-
-Mở phpMyAdmin
-
-Tạo database tên: vincine
-
-Import file SQL (nếu có)
-
-3. Cấu hình kết nối
-
-Mở file:
-app/config/config.php
-
-Sửa thành:
-
-$dbHost = "127.0.0.1";
-$dbUser = "root";
-$dbPass = "";
-$dbName = "vincine";
-
-4. Chạy dự án
-
-Đưa vào htdocs (XAMPP)
-
-Truy cập trình duyệt:
-
-http://localhost/testing
-
-🔧 Hướng phát triển
-
-Nâng cấp UI/UX theo chuẩn hiện đại
-
-Thêm phân quyền người dùng
-
-Tăng cường bảo mật (SQL Injection, XSS)
-
-Tách API riêng cho mobile/web client
-
-Viết báo cáo kỹ thuật & tài liệu thiết kế hệ thống
-
-🤝 Đóng góp
-
-Pull Request & Issues được chào đón.
-Hãy tạo branch mới khi gửi PR.
-
-📄 License
-
-Open for educational and personal portfolio use.
+│── structure.txt           # Mô tả cấu trúc dự án
+└── README.md               # Tài liệu dự án
