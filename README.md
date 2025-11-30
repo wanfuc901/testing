@@ -1,4 +1,4 @@
-# 🎬 Vincent Cinemas– Web Application  
+# 🎬 Vincent Cinemas – Web Application  
 **Author:** Phạm Hoàng Phúc  
 **Trường:** Cao đẳng Cộng đồng Sóc Trăng – Khoa Kinh tế  
 
@@ -12,16 +12,15 @@
 ---
 
 ## 📘 Giới thiệu
-**Vincent Cinemas Application** là một dự án được xây dựng nhằm thực hành toàn bộ quy trình phát triển ứng dụng web từ frontend → backend → database → deploy local.  
-Dự án giúp người học rèn luyện kỹ năng:
+**Vincent Cinemas Application** là dự án mô phỏng hệ thống đặt vé xem phim, được xây dựng để thực hành quy trình phát triển web từ frontend → backend → database → realtime → deploy local.  
+Dự án giúp người phát triển rèn luyện các kỹ năng nền tảng:
 
 - Phát triển website chạy ổn định bằng PHP & MySQL  
-- Thành thạo thao tác CRUD  
-- Tổ chức thư mục theo chuẩn MVC đơn giản  
-- Sử dụng Git/GitHub để quản lý mã nguồn  
-- Thử nghiệm thêm tính năng realtime bằng Socket.io  
-
-Dự án phù hợp làm **bài tập lớn**, **đồ án tốt nghiệp**, hoặc **portfolio cá nhân**.
+- Thành thạo thao tác CRUD với cơ sở dữ liệu  
+- Tổ chức thư mục theo mô hình MVC đơn giản  
+- Quản lý mã nguồn bằng Git/GitHub  
+- Tích hợp thử nghiệm tính năng realtime bằng Socket.io  
+- Phù hợp cho bài tập lớn, đồ án tốt nghiệp hoặc portfolio cá nhân  
 
 ---
 
@@ -29,21 +28,21 @@ Dự án phù hợp làm **bài tập lớn**, **đồ án tốt nghiệp**, ho�
 
 ### 🎨 Frontend
 - HTML5 + CSS3 tùy chỉnh  
-- JavaScript xử lý thao tác người dùng  
-- Giao diện đơn giản, dễ mở rộng  
+- JavaScript xử lý tương tác người dùng  
+- Giao diện đơn giản, dễ mở rộng và nâng cấp  
 
 ### 🧩 Backend (PHP)
-- Xử lý request, routing cơ bản  
+- Routing và xử lý request cơ bản  
 - Chức năng CRUD đầy đủ  
-- Kết nối MySQL và truy vấn bảo mật hơn  
-- Các helper được chia theo nghiệp vụ  
+- Kết nối MySQL với cấu trúc chuẩn, dễ bảo trì  
+- Helper functions tách riêng theo nghiệp vụ để tối ưu codebase  
 
 ### 🔐 Admin Panel
-- Giao diện quản trị độc lập  
-- Quản lý nội dung / dữ liệu dễ dàng  
+- Khu vực quản trị độc lập  
+- Quản lý nội dung, dữ liệu và tác vụ hệ thống  
 
 ### ⚡ Realtime (Optional)
-- Tích hợp Socket.io cho các tính năng realtime
+- Socket.io dùng để thử nghiệm các tính năng realtime như trạng thái ghế, thông báo,…
 
 ---
 
@@ -54,7 +53,7 @@ Dự án phù hợp làm **bài tập lớn**, **đồ án tốt nghiệp**, ho�
 | Frontend        | HTML5, CSS3, JavaScript |
 | Backend         | PHP 7+ |
 | Database        | MySQL (DB: **vincine**) |
-| Realtime        | Socket.io (tùy chọn) |
+| Realtime        | Socket.io (optional) |
 | Thư viện        | PHPMailer, Composer vendor |
 | Version Control | Git + GitHub |
 
@@ -63,7 +62,7 @@ Dự án phù hợp làm **bài tập lớn**, **đồ án tốt nghiệp**, ho�
 ## 📂 Cấu trúc thư mục
 
 ```text
-Vincent Cinemas/
+VincentCinemas/
 │── admin/                  # Admin Panel
 │── app/                    # Config, controllers, core logic
 │── helpers/                # Helper PHP utilities
