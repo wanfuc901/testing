@@ -1,4 +1,4 @@
-# 🎬 Testing Project – Web Application  
+# 🎬 Vincent Cinemas– Web Application  
 **Author:** Phạm Hoàng Phúc  
 **Trường:** Cao đẳng Cộng đồng Sóc Trăng – Khoa Kinh tế  
 
