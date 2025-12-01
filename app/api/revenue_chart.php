@@ -1,27 +1,25 @@
 <?php
-require_once __DIR__ . '/../config/config.php';
-header('Content-Type: application/json');
+require_once __DIR__ . "/../../app/config/config.php";
 
-// Lấy doanh thu từng ngày trong tháng hiện tại
+header("Content-Type: application/json; charset=utf-8");
+
 $sql = "
     SELECT 
-        DATE(paid_at) as date,
-        SUM(amount) as total
-    FROM payments
-    WHERE status = 'success'
-      AND amount > 0
-      AND DATE_FORMAT(paid_at,'%Y-%m') = DATE_FORMAT(CURDATE(),'%Y-%m')
-    GROUP BY DATE(paid_at)
-    ORDER BY DATE(paid_at)
+        DATE(booked_at) AS date,
+        SUM(price) AS total
+    FROM tickets
+    WHERE (status='confirmed' OR paid = 1)
+    GROUP BY DATE(booked_at)
+    ORDER BY date ASC
 ";
 
 $rs = $conn->query($sql);
-$data = [];
 
-while($row = $rs->fetch_assoc()){
+$data = [];
+while ($row = $rs->fetch_assoc()) {
     $data[] = [
-        'date'  => $row['date'],
-        'total' => (float)$row['total']
+        "date" => $row["date"],       // yyyy-mm-dd
+        "total" => (float)$row["total"]
     ];
 }
 

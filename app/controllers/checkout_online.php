@@ -21,9 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $showtime_id = intval($_POST['showtime_id'] ?? 0);
 $seats       = trim($_POST['seats'] ?? '');
 $method      = $_POST['payment_method'] ?? 'cash';
-$user_id     = intval($_SESSION['user_id'] ?? 0);
 
-if (!$showtime_id || !$seats || !$user_id) die("Dữ liệu không hợp lệ.");
+$customer_id = intval($_SESSION['customer_id'] ?? 0);
+if (!$customer_id) die("Bạn cần đăng nhập để thanh toán.");
+
+if (!$showtime_id || !$seats) die("Dữ liệu không hợp lệ.");
 
 /* ========= COMBO ========= */
 $temp         = $_SESSION['temp_booking'] ?? [];
@@ -60,11 +62,10 @@ if ($method === 'cash') {
 
     $insertPay = $conn->prepare("
         INSERT INTO payments
-        (user_id, method, amount, status, provider_txn_id, paid_at)
+        (customer_id, method, amount, status, provider_txn_id, paid_at)
         VALUES (?, 'offline', ?, 'pending', ?, NOW())
     ");
-
-    $insertPay->bind_param("ids", $user_id, $totalPrice, $txn);
+    $insertPay->bind_param("ids", $customer_id, $totalPrice, $txn);
     $insertPay->execute();
     $payment_id = $insertPay->insert_id;
     $insertPay->close();
@@ -72,19 +73,20 @@ if ($method === 'cash') {
     /* INSERT TICKET */
     $sqlT = "
         INSERT INTO tickets
-        (showtime_id, seat_id, user_id, payment_id, channel,
+        (showtime_id, seat_id, customer_id, payment_id, channel,
          paid, status, price, booked_at)
         VALUES (?, ?, ?, ?, 'offline', 1, 'confirmed', ?, NOW())
     ";
 
     $stmtT = $conn->prepare($sqlT);
 
+    $booked = [];
     foreach ($seatArr as $sid) {
         $stmtT->bind_param(
             "iiiid",
             $showtime_id,
             $sid,
-            $user_id,
+            $customer_id,
             $payment_id,
             $ticketPrice
         );
@@ -92,6 +94,28 @@ if ($method === 'cash') {
         $booked[] = $sid;
     }
     $stmtT->close();
+
+    /* ===== Tạo seat labels để hiện lên trang success ===== */
+    $seatLabels = [];
+    $q = $conn->prepare("SELECT row_number, col_number FROM seats WHERE seat_id=?");
+    foreach ($seatArr as $sid) {
+        $q->bind_param("i", $sid);
+        $q->execute();
+        $rs = $q->get_result()->fetch_assoc();
+        if ($rs) {
+            $rowChar = chr(64 + intval($rs['row_number']));
+            $seatLabels[] = $rowChar . $rs['col_number'];
+        }
+    }
+    $q->close();
+
+    /* ===== LƯU SESSION CHO booking_success ===== */
+    $_SESSION['last_booking'] = [
+        'showtime_id' => $showtime_id,
+        'seat_labels' => $seatLabels,
+        'total'       => $totalPrice,
+        'method'      => 'cash'
+    ];
 
     /* REALTIME */
     emit_seat_booked_done($showtime_id, $booked);
@@ -120,10 +144,10 @@ $orderData = json_encode([
 /* INSERT PAYMENT */
 $stmtPay = $conn->prepare("
     INSERT INTO payments
-    (user_id, method, amount, order_data, status, provider_txn_id, created_at)
+    (customer_id, method, amount, order_data, status, provider_txn_id, created_at)
     VALUES (?, 'online', ?, ?, 'pending', ?, NOW())
 ");
-$stmtPay->bind_param("idss", $user_id, $totalPrice, $orderData, $orderCode);
+$stmtPay->bind_param("idss", $customer_id, $totalPrice, $orderData, $orderCode);
 $stmtPay->execute();
 $payment_id = $stmtPay->insert_id;
 $stmtPay->close();
@@ -131,7 +155,7 @@ $stmtPay->close();
 /* INSERT VÉ PENDING (HOLD) */
 $sqlHold = "
     INSERT INTO tickets
-    (showtime_id, seat_id, user_id, payment_id, channel,
+    (showtime_id, seat_id, customer_id, payment_id, channel,
      paid, status, price, booked_at)
     VALUES (?, ?, ?, ?, 'online', 0, 'pending', ?, NOW())
 ";
@@ -143,7 +167,7 @@ foreach ($seatArr as $sid) {
         "iiiid",
         $showtime_id,
         $sid,
-        $user_id,
+        $customer_id,
         $payment_id,
         $ticketPrice
     );
@@ -158,3 +182,4 @@ unset($_SESSION['temp_booking']);
 
 header("Location: ../../app/views/payment/payment_qr.php?payment_id=" . $payment_id);
 exit;
+?>

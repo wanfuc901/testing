@@ -3,14 +3,17 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Nếu chưa đăng nhập thì hiện thông báo
-if (empty($_SESSION['user_id'])) {
+/* ===== KIỂM TRA LOGIN ===== */
+$isLoggedIn = isset($_SESSION['role']) && 
+              in_array($_SESSION['role'], ['admin','user','customer']);
+
+if (!$isLoggedIn) {
     echo '<!doctype html>
     <html lang="vi">
     <head>
       <meta charset="utf-8">
       <title>Yêu cầu đăng nhập</title>
-      <link rel="stylesheet" href="/VincentCinemas/public/assets/css/style.css">
+      <link rel="stylesheet" href="public/assets/css/style.css">
       <style> 
         .alert-box {
           background: rgba(255,255,255,0.05);
@@ -20,9 +23,9 @@ if (empty($_SESSION['user_id'])) {
           max-width: 500px;
           box-shadow: 0 0 30px rgba(0,0,0,0.4);
           position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
         }
         h1 {
           color: #ff4444;
@@ -43,8 +46,8 @@ if (empty($_SESSION['user_id'])) {
     </head>
     <body>
       <div class="alert-box">
-        <h1>Bạn cần đăng nhập để đặt vé</h1>
-        <p>Vui lòng đăng nhập tài khoản của bạn trước khi tiếp tục.</p>
+        <h1>Bạn cần đăng nhập để tiếp tục</h1>
+        <p>Vui lòng đăng nhập tài khoản của bạn trước khi thao tác.</p>
         <a class="btn" href="index.php?p=login">Đăng nhập ngay</a>
       </div>
     </body>

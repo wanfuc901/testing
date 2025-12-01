@@ -2,22 +2,21 @@
 require_once __DIR__ . '/../app/config/config.php';
 include __DIR__ . '/../app/views/layouts/admin_menu.php';
 
-/* ===== Hiển thị lỗi khi dev ===== */
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-/* ===== Thiết lập khoảng ngày mặc định ===== */
+/* ==== RANGE NGÀY ==== */
 $today = date('Y-m-d');
 $firstLastMonth = date('Y-m-01', strtotime('first day of last month'));
+
 $from = $_GET['from'] ?? $firstLastMonth;
 $to   = $_GET['to'] ?? $today;
 
-/* ===== Kiểm tra hợp lệ định dạng ngày ===== */
 $reDate = '/^\d{4}-\d{2}-\d{2}$/';
 if (!preg_match($reDate, $from)) $from = $firstLastMonth;
 if (!preg_match($reDate, $to))   $to = $today;
 
-/* ===== Hàm truy vấn an toàn + báo lỗi ===== */
+/* ==== HÀM TRUY VẤN ==== */
 function q($conn, $sql) {
   $rs = $conn->query($sql);
   if ($rs === false) {
@@ -26,16 +25,20 @@ function q($conn, $sql) {
   return $rs;
 }
 
-/* === 1. Doanh thu theo tháng === */
+/* =====================================================================
+   1) DOANH THU THEO THÁNG – dùng bảng payments (CSDL chuẩn)
+===================================================================== */
 $revenueData = q($conn, "
-  SELECT DATE_FORMAT(t.booked_at, '%Y-%m') AS thang,
-         SUM(COALESCE(t.price,0)) AS doanh_thu
-  FROM tickets t
-  WHERE (t.status IN ('paid','confirmed') OR t.paid=1)
-    AND DATE(t.booked_at) BETWEEN '{$from}' AND '{$to}'
-  GROUP BY DATE_FORMAT(t.booked_at, '%Y-%m')
+  SELECT DATE_FORMAT(p.paid_at, '%Y-%m') AS thang,
+         SUM(p.amount) AS doanh_thu
+  FROM payments p
+  WHERE p.status='success'
+    AND p.amount > 0
+    AND DATE(p.paid_at) BETWEEN '{$from}' AND '{$to}'
+  GROUP BY DATE_FORMAT(p.paid_at, '%Y-%m')
   ORDER BY thang ASC
 ");
+
 $labels_month = [];
 $values_month = [];
 while($r = $revenueData->fetch_assoc()){
@@ -43,33 +46,46 @@ while($r = $revenueData->fetch_assoc()){
   $values_month[] = (float)$r['doanh_thu'];
 }
 
-/* === 2. Tổng hợp nhanh === */
+/* =====================================================================
+   2) TỔNG HỢP NHANH
+===================================================================== */
 $stats = q($conn, "
   SELECT
-    (SELECT IFNULL(SUM(price),0)
-     FROM tickets
-     WHERE (status IN ('paid','confirmed') OR paid=1)) AS total_revenue,
+    (SELECT IFNULL(SUM(amount),0)
+     FROM payments
+     WHERE status='success' AND amount>0) AS total_revenue,
 
     (SELECT COUNT(*)
-     FROM tickets
-     WHERE (status IN ('paid','confirmed') OR paid=1)) AS total_tickets,
+     FROM payments
+     WHERE status='success' AND amount>0) AS total_tickets,
 
-    (SELECT COUNT(*) FROM showtimes WHERE status='active') AS total_showtimes,
+    (SELECT COUNT(*) 
+     FROM showtimes 
+     WHERE status='active') AS total_showtimes,
 
-    (SELECT COUNT(DISTINCT user_id) FROM tickets) AS total_users
+    (SELECT COUNT(DISTINCT customer_id)
+     FROM payments
+     WHERE status='success' AND amount>0) AS total_users
 ")->fetch_assoc();
 
-/* === 3. Top 5 phim doanh thu cao === */
+/* =====================================================================
+   3) TOP 5 PHIM DOANH THU CAO NHẤT
+   (dựa trên payments + tickets + showtimes + movies)
+===================================================================== */
 $topMovies = q($conn, "
-  SELECT m.title, IFNULL(SUM(t.price),0) AS revenue
-  FROM movies m
-  LEFT JOIN showtimes s ON s.movie_id=m.movie_id
-  LEFT JOIN tickets t ON t.showtime_id=s.showtime_id
-  WHERE (t.status IN ('paid','confirmed') OR t.paid=1)
+  SELECT 
+    m.title,
+    SUM(p.amount) AS revenue
+  FROM payments p
+  JOIN tickets t ON t.payment_id = p.payment_id
+  JOIN showtimes s ON s.showtime_id = t.showtime_id
+  JOIN movies m ON m.movie_id = s.movie_id
+  WHERE p.status='success' AND p.amount > 0
   GROUP BY m.movie_id
   ORDER BY revenue DESC
   LIMIT 5
 ");
+
 $movieLabels = [];
 $movieValues = [];
 while($row = $topMovies->fetch_assoc()){
@@ -77,20 +93,24 @@ while($row = $topMovies->fetch_assoc()){
   $movieValues[] = (float)$row['revenue'];
 }
 
-/* === 4. Doanh thu theo phòng chiếu === */
+/* =====================================================================
+   4) DOANH THU THEO PHÒNG CHIẾU
+===================================================================== */
 $byRoom = q($conn, "
   SELECT 
     r.name AS room_name,
     COUNT(DISTINCT s.showtime_id) AS total_showtimes,
     COUNT(t.ticket_id) AS total_tickets,
-    IFNULL(SUM(t.price),0) AS revenue
+    SUM(p.amount) AS revenue
   FROM rooms r
   LEFT JOIN showtimes s ON s.room_id = r.room_id
   LEFT JOIN tickets t ON t.showtime_id = s.showtime_id
-  WHERE (t.status IN ('paid','confirmed') OR t.paid=1)
+  LEFT JOIN payments p ON p.payment_id = t.payment_id
+  WHERE p.status='success' AND p.amount > 0
   GROUP BY r.room_id
   ORDER BY revenue DESC
 ");
+
 $roomLabels = [];
 $roomValues = [];
 $roomDetails = [];
@@ -99,8 +119,8 @@ while($r = $byRoom->fetch_assoc()){
   $roomValues[] = (float)$r['revenue'];
   $roomDetails[] = $r;
 }
-
 ?>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -111,6 +131,121 @@ while($r = $byRoom->fetch_assoc()){
 <link rel="stylesheet" href="public/assets/boxicons/css/boxicons.min.css">
 <script src="public/assets/js/admin/chart.js@4.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<style>
+/* ============================
+   IN ẤN – CHỈ IN BIỂU ĐỒ
+=============================== */
+@media print {
+
+  /* Ẩn toàn bộ phần admin */
+  .admin-menu,
+  .admin-title .admin-actions,
+  .admin-title a,
+  form,
+  .filter-form,
+  .filter-buttons,
+  .card-grid,
+  .card:first-child,
+  .subtitle,
+  button,
+  .btn,
+  .btn-print,
+  .btn.ghost {
+      display: none !important;
+  }
+
+  /* Ẩn toàn bộ card */
+  .card {
+      display: none !important;
+  }
+
+  /* Chỉ hiện vùng biểu đồ */
+  .chart-box {
+      display: block !important;
+      width: 100% !important;
+      margin-top: 0 !important;
+  }
+
+  /* Căn giữa canvas in ra */
+  .chart-container {
+      width: 100% !important;
+      height: auto !important;
+      margin: 0 auto !important;
+  }
+
+  canvas {
+      max-width: 100% !important;
+      height: auto !important;
+  }
+
+  /* Nếu đang ở chế độ xem theo phòng -> cho bảng phòng hiển thị */
+  #roomDetailBox {
+      display: block !important;
+      margin-top: 25px !important;
+  }
+
+  /* Ẩn menu */
+  .admin-wrap {
+      padding: 0 !important;
+      margin: 0 !important;
+  }
+}
+/* Ẩn toàn bộ layout, chỉ giữ .admin-container */
+@media print {
+
+  /* Ẩn tất cả phần ngoài admin-container */
+  body * {
+      visibility: hidden;
+  }
+
+  /* Chỉ hiện nội dung cần in */
+  .admin-container, 
+  .admin-container * {
+      visibility: visible;
+  }
+
+  /* Cố định vị trí admin-container khi in */
+  .admin-container {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+  }
+
+  /* Biểu đồ full width */
+  canvas {
+      width: 100% !important;
+      height: auto !important;
+  }
+
+  /* Ẩn card KPI */
+  .card-grid {
+      display: none !important;
+  }
+
+  /* Ẩn form filter */
+  form,
+  .filter-form,
+  .filter-buttons {
+      display: none !important;
+  }
+
+  /* Chỉ hiện biểu đồ */
+  .chart-box {
+      display: block !important;
+      margin-top: 0 !important;
+  }
+
+  /* Nếu chọn phòng chiếu -> hiện bảng */
+  #roomDetailBox {
+      display: block !important;
+  }
+}
+
+</style>
+
 </head>
 <body class="stats-page">
 <div class="admin-wrap">
@@ -161,34 +296,35 @@ while($r = $byRoom->fetch_assoc()){
       <h2><i class="bi bi-graph-up-arrow"></i> Biểu đồ thống kê</h2>
       <div class="chart-container"><canvas id="chartDynamic"></canvas></div>
     </div>
+
     <!-- Bảng chi tiết doanh thu theo phòng -->
-<div class="card" id="roomDetailBox" style="margin-top:25px; display:none;">
-  <h3><i class="bi bi-building"></i> Chi tiết doanh thu theo phòng</h3>
-  <table class="admin-table">
-    <thead>
-      <tr>
-        <th>Phòng</th>
-        <th>Suất chiếu</th>
-        <th>Số vé</th>
-        <th>Doanh thu</th>
-      </tr>
-    </thead>
-    <tbody>
-      <?php if (count($roomDetails)): ?>
-        <?php foreach ($roomDetails as $r): ?>
-        <tr>
-          <td><?= htmlspecialchars($r['room_name']) ?></td>
-          <td><?= number_format($r['total_showtimes']) ?></td>
-          <td><?= number_format($r['total_tickets']) ?></td>
-          <td><?= number_format($r['revenue'],0,',','.') ?> đ</td>
-        </tr>
-        <?php endforeach; ?>
-      <?php else: ?>
-        <tr><td colspan="4" style="text-align:center;color:var(--muted)">Không có dữ liệu</td></tr>
-      <?php endif; ?>
-    </tbody>
-  </table>
-</div>
+    <div class="card" id="roomDetailBox" style="margin-top:25px; display:none;">
+      <h3><i class="bi bi-building"></i> Chi tiết doanh thu theo phòng</h3>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Phòng</th>
+            <th>Suất chiếu</th>
+            <th>Số vé</th>
+            <th>Doanh thu</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php if (count($roomDetails)): ?>
+            <?php foreach ($roomDetails as $r): ?>
+            <tr>
+              <td><?= htmlspecialchars($r['room_name']) ?></td>
+              <td><?= number_format($r['total_showtimes']) ?></td>
+              <td><?= number_format($r['total_tickets']) ?></td>
+              <td><?= number_format($r['revenue'],0,',','.') ?> đ</td>
+            </tr>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <tr><td colspan="4" style="text-align:center;color:var(--muted)">Không có dữ liệu</td></tr>
+          <?php endif; ?>
+        </tbody>
+      </table>
+    </div>
 
   </div>
 </div>

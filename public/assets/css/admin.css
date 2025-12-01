@@ -710,17 +710,19 @@ input[disabled][title]:hover::after {
 }
 
 .admin-table td.td-actions {
-  vertical-align: middle !important;
-  text-align: center;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+    padding: 10px 12px;
 }
 
 .td-actions {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 100%;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
+
 
 .td-actions form {
   margin: 0 !important;
@@ -747,27 +749,24 @@ input[disabled][title]:hover::after {
   justify-content: center;
   gap: 8px;
 }
-
 .td-actions a,
 .td-actions form {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+
 .td-actions form {
-  padding: 0;
-  border: none;
-  background: transparent;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .td-actions .btn {
-  height: 34px;
-  line-height: 1;
-  padding: 0 14px;
-  font-size: 13px;
-  border-radius: 8px;
+    height: 34px;
+    line-height: 1;
+    padding: 0 14px;
+    font-size: 13px;
 }
 /* =====================================================
    🎞️ VIN-CINE ADMIN REEL LOADER (SIGNATURE LIGHT MODE)

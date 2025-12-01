@@ -14,7 +14,7 @@ function generate_order_code() {
 }
 
 /* ============================
-   KIỂM TRA GHẾ FLOW CŨ
+   KIỂM TRA GHẾ
 ============================ */
 function is_seat_available($showtime_id, array $seat_ids) {
     global $conn;
@@ -64,9 +64,9 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
     $data = json_decode($payment['order_data'] ?? '', true);
     if (!$data) throw new Exception("order_data lỗi");
 
-    $user_id      = (int)$payment['user_id'];
-    $showtime_id  = (int)$data['showtime_id'];
-    $seat_ids     = $data['seats'];
+    $customer_id = (int)$payment['customer_id'];
+    $showtime_id = (int)$data['showtime_id'];
+    $seat_ids    = $data['seats'];
     $ticket_price = (float)$data['ticket_price'];
     $combos       = $data['combos'] ?? [];
 
@@ -98,7 +98,8 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
                 UPDATE tickets
                 SET paid=1,
                     status='pending',
-                    price=?
+                    price=?,
+                    customer_id=?
                 WHERE ticket_id=?
             ";
 
@@ -109,8 +110,9 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
                 $tid = (int)$t['ticket_id'];
 
                 $stmtU->bind_param(
-                    "di",
+                    "dii",
                     $ticket_price,
+                    $customer_id,
                     $tid
                 );
                 $stmtU->execute();
@@ -132,7 +134,7 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
 
             $sqlT = "
                 INSERT INTO tickets
-                (showtime_id, seat_id, user_id, payment_id, channel,
+                (showtime_id, seat_id, customer_id, payment_id, channel,
                  paid, status, price)
                 VALUES (?, ?, ?, ?, 'online', 1, 'pending', ?)
             ";
@@ -146,7 +148,7 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
                     "iiiid",
                     $showtime_id,
                     $sid,
-                    $user_id,
+                    $customer_id,
                     $payment_id,
                     $ticket_price
                 );
@@ -205,4 +207,3 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
         throw $e;
     }
 }
-

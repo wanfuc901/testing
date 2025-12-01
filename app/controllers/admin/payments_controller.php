@@ -18,9 +18,9 @@ if ($action === 'detail' && isset($_GET['id'])) {
 
     /* Lấy thông tin payment */
     $sql = "
-        SELECT p.*, u.name AS fullname, u.email
+        SELECT p.*, c.fullname, c.email
         FROM payments p
-        LEFT JOIN users u ON u.user_id = p.user_id
+        LEFT JOIN customers c ON c.customer_id = p.customer_id
         WHERE p.payment_id = ?
     ";
 
@@ -126,7 +126,7 @@ $type = str_repeat('i', count($ids));
 switch ($action) {
 
     case 'mark_paid':
-        // CHỈ đổi status, KHÔNG tạo vé
+        // Chỉ update status, không tạo vé
         $sql = "UPDATE payments SET status='success' WHERE payment_id IN ($in)";
         $newStatus = "success";
         $stmt = $conn->prepare($sql);
@@ -137,12 +137,12 @@ switch ($action) {
         break;
 
     case 'confirm':
-        // GỌI finalize_payment -> tạo vé + combo + update status
+        // finalize_payment sẽ tự tạo vé + cập nhật status + realtime
         foreach ($ids as $pid) {
             try {
                 finalize_payment($pid, $_SESSION['name'] ?? 'admin');
             } catch (Exception $e) {
-                // Có thể log lỗi, nhưng không die để không chặn các id khác
+                // bỏ qua lỗi của từng đơn để xử lý tiếp đơn khác
             }
         }
         $newStatus = "success";
@@ -162,7 +162,7 @@ switch ($action) {
         die("Invalid action.");
 }
 
-/* PUSH REALTIME */
+/* ===== REALTIME UPDATE ===== */
 foreach ($ids as $pid) {
     emit_payment_update($pid, $newStatus);
 }

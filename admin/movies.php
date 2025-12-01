@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../app/config/config.php';
 include __DIR__ . '/../app/views/layouts/admin_menu.php';
 
+
+
 $q = trim($_GET['q'] ?? '');
 $sql = "
   SELECT m.*, g.name AS genre_name
@@ -71,7 +73,11 @@ $totalPages = ceil($total / $perPage);
     ?>
     <link rel="stylesheet" href="public/assets/css/admin.css">
 <link rel="stylesheet" href="public/assets/bootstrap-icons/bootstrap-icons.css">
+
     <form class="admin-container" action="app/controllers/admin/movies_controller.php" method="post" enctype="multipart/form-data">
+
+
+
       <input type="hidden" name="action" value="<?= $editId? 'update':'create' ?>">
       <?php if($editId): ?><input type="hidden" name="movie_id" value="<?= $editId ?>"><?php endif; ?>
 
@@ -128,8 +134,6 @@ $totalPages = ceil($total / $perPage);
           </select>
         </div>
 
-        <!-- ✅ UPLOAD POSTER -->
-        <div class="full">
           <label>Poster phim</label>
           <?php if (!empty($movie['poster_url'])): ?>
             <img src="app/views/banners/<?= htmlspecialchars($movie['poster_url']) ?>" 
@@ -185,12 +189,17 @@ $totalPages = ceil($total / $perPage);
             <td><?= number_format((float)$row['ticket_price'],0,'.','.') ?> đ</td>
             <td><?= htmlspecialchars($row['start_date']).' → '.htmlspecialchars($row['end_date']) ?></td>
             <td class="td-actions">
-              <a class="btn ghost" href="index.php?p=admin_movies&edit=<?= (int)$row['movie_id'] ?>">Sửa</a>
-              <form action="app/controllers/admin/movies_controller.php" method="post" onsubmit="return confirm('Xóa phim này?');">
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="movie_id" value="<?= (int)$row['movie_id'] ?>">
-                <button class="btn" type="submit">Xóa</button>
+            <a class="btn ghost" href="index.php?p=admin_movies&edit=<?= (int)$row['movie_id'] ?>">Sửa</a>
+
+           <form action="app/controllers/admin/movies_controller.php"
+              method="post"
+              style="margin:0; padding:0; display:inline-flex; align-items:center;"
+              onsubmit="return confirm('Xóa phim này?');">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="movie_id" value="<?= (int)$row['movie_id'] ?>">
+            <button class="btn" type="submit">Xóa</button>
               </form>
+
             </td>
           </tr>
           <?php endwhile; ?>

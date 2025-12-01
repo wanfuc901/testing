@@ -3,22 +3,35 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
 require __DIR__ . '/../app/config/config.php';
 
-// Nếu chưa đăng nhập
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+/* ============================================================
+   1. KIỂM TRA ĐĂNG NHẬP (USER HOẶC CUSTOMER)
+============================================================ */
+if (
+    !isset($_SESSION['role']) ||
+    !in_array($_SESSION['role'], ['admin', 'user', 'customer'])
+) {
+    header("Location: index.php?p=login");
     exit;
 }
 
-// Lấy ticket_id
+/* Lấy ID người dùng đúng bảng */
+$viewer_id = ($_SESSION['role'] === 'customer')
+    ? ($_SESSION['customer_id'] ?? 0)
+    : ($_SESSION['user_id'] ?? 0);
+
+
+/* ============================================================
+   2. LẤY ticket_id
+============================================================ */
 if (!isset($_GET['ticket_id'])) {
     die("Thiếu mã vé.");
 }
 
 $ticket_id = (int)$_GET['ticket_id'];
-$user_id   = $_SESSION['user_id'];
+
 
 /* ============================================================
-   LẤY THÔNG TIN VÉ
+   3. LẤY THÔNG TIN VÉ — KIỂM TRA THEO customer_id
 ============================================================ */
 $sql = "
     SELECT 
@@ -41,11 +54,12 @@ $sql = "
     JOIN movies m ON sh.movie_id = m.movie_id
     JOIN seats s ON t.seat_id = s.seat_id
     JOIN rooms r ON sh.room_id = r.room_id
-    WHERE t.ticket_id = ? AND t.user_id = ?
+    WHERE t.ticket_id = ? 
+      AND t.customer_id = ?
 ";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("ii", $ticket_id, $user_id);
+$stmt->bind_param("ii", $ticket_id, $viewer_id);
 $stmt->execute();
 $ticket = $stmt->get_result()->fetch_assoc();
 $stmt->close();
@@ -55,14 +69,15 @@ if (!$ticket) {
 }
 
 /* ============================================================
-   POSTER LOCAL
+   4. POSTER LOCAL
 ============================================================ */
 $poster_path = !empty(trim($ticket['poster_url']))
     ? "../app/views/banners/" . htmlspecialchars(trim($ticket['poster_url']))
     : "assets/img/no-poster.png";
 
+
 /* ============================================================
-   QR PAYMENT NẾU VÉ ĐANG PENDING
+   5. QR PAYMENT NẾU VÉ ĐANG PENDING
 ============================================================ */
 $qrBlock = "";
 
@@ -70,7 +85,6 @@ if ($ticket['status'] === 'pending' && !empty($ticket['payment_id'])) {
 
     $pid = (int)$ticket['payment_id'];
 
-    // lấy payment
     $stmt = $conn->prepare("SELECT * FROM payments WHERE payment_id=?");
     $stmt->bind_param("i", $pid);
     $stmt->execute();
@@ -81,7 +95,7 @@ if ($ticket['status'] === 'pending' && !empty($ticket['payment_id'])) {
 
         $data = json_decode($pay['order_data'], true);
 
-        // GHẾ
+        // danh sách ghế
         $seatLabels = [];
         foreach ($data['seats'] as $sid) {
             $q = $conn->prepare("SELECT row_number, col_number FROM seats WHERE seat_id=?");
@@ -104,26 +118,23 @@ if ($ticket['status'] === 'pending' && !empty($ticket['payment_id'])) {
         $bank_code      = "970422"; 
         $total_amount   = $data['total_amount'];
 
-        // Tạo QR VietQR
+        // QR
         $qrUrl = "https://img.vietqr.io/image/{$bank_code}-{$account_number}-compact.png?"
                . "amount={$total_amount}&addInfo=" . urlencode($description);
 
-        // HTML QR
         $qrBlock = "
-    <div class='qr-box'>
-        <h3><i class='bi bi-upc-scan'></i> Quét QR để hoàn tất thanh toán</h3>
-        <p style='color:#bbb;margin-top:-6px;'>Hiện hóa đơn chưa được xác nhận.</p>
+        <div class='qr-box'>
+            <h3>Quét QR để thanh toán</h3>
+            <p style='color:#bbb;margin-top:-6px;'>Hiện hóa đơn chưa được xác nhận.</p>
 
-        <p><strong><i class='bi bi-receipt'></i> Mã đơn:</strong> {$orderCode}</p>
-        <p><strong><i class='bi bi-grid-1x2'></i> Ghế:</strong> {$seatText}</p>
-        <p><strong><i class='bi bi-bank'></i> Ngân hàng:</strong> {$bank_code}</p>
-        <p><strong><i class='bi bi-pen'></i> Nội dung CK:</strong> {$description}</p>
+            <p><strong>Mã đơn:</strong> {$orderCode}</p>
+            <p><strong>Ghế:</strong> {$seatText}</p>
+            <p><strong>Nội dung CK:</strong> {$description}</p>
 
-        <div class='qr-frame'>
-          <img src='{$qrUrl}' alt='QR CODE'>
-        </div>
-    </div>
-";
+            <div class='qr-frame'>
+              <img src='{$qrUrl}' alt='QR CODE'>
+            </div>
+        </div>";
     }
 }
 ?>
@@ -135,8 +146,6 @@ if ($ticket['status'] === 'pending' && !empty($ticket['payment_id'])) {
 
   <!-- CSS LOCAL -->
   <link rel="stylesheet" href="assets/css/style.css">
-
-  <!-- ICON LOCAL -->
   <link rel="stylesheet" href="assets/bootstrap-icons/bootstrap-icons.css">
 
   <style>
@@ -146,26 +155,23 @@ if ($ticket['status'] === 'pending' && !empty($ticket['payment_id'])) {
         border-radius:14px;
         color:#eee;
         margin-top:25px;
-        text-align:center; /* Căn giữa toàn bộ nội dung */
+        text-align:center;
     }
     .qr-frame{
         background:#fff;
         padding:15px;
         border-radius:10px;
-        margin:15px auto;        /* AUTO để căn giữa BOX */
-        width: fit-content;       /* Khung QR gọn theo kích thước ảnh */
+        margin:15px auto;
+        width: fit-content;
         display: flex;
-        justify-content: center;  /* Căn giữa QR */
+        justify-content: center;
         align-items: center;
     }
-
     .qr-frame img{
         width:220px;
         display:block;
         margin:auto;
     }
-    `
-
   </style>
 </head>
 <body>
@@ -181,45 +187,40 @@ if ($ticket['status'] === 'pending' && !empty($ticket['payment_id'])) {
     <div class="info">
       <h1><?= htmlspecialchars($ticket['title']) ?></h1>
 
-      <p><strong><i class="bi bi-film"></i> Thể loại:</strong> <?= htmlspecialchars($ticket['genre']) ?></p>
+      <p><strong>Thể loại:</strong> <?= htmlspecialchars($ticket['genre']) ?></p>
 
-      <p><strong><i class="bi bi-stopwatch"></i> Thời lượng:</strong>
-        <?= htmlspecialchars($ticket['duration']) ?> phút
-      </p>
+      <p><strong>Thời lượng:</strong> <?= htmlspecialchars($ticket['duration']) ?> phút</p>
 
-      <p><strong><i class="bi bi-camera-reels"></i> Phòng chiếu:</strong>
-        <?= htmlspecialchars($ticket['room_name']) ?>
-      </p>
+      <p><strong>Phòng chiếu:</strong> <?= htmlspecialchars($ticket['room_name']) ?></p>
 
-      <p><strong><i class="bi bi-clock-history"></i> Thời gian:</strong>
+      <p><strong>Thời gian:</strong>
         <?= date("d/m/Y H:i", strtotime($ticket['start_time'])) ?> -
         <?= date("H:i", strtotime($ticket['end_time'])) ?>
       </p>
 
-      <p><strong><i class="bi bi-grid-1x2"></i> Ghế:</strong>
+      <p><strong>Ghế:</strong>
         H<?= $ticket['row_number'] ?>C<?= $ticket['col_number'] ?>
       </p>
 
-      <p><strong><i class="bi bi-cash-stack"></i> Giá vé:</strong>
+      <p><strong>Giá vé:</strong>
         <?= number_format($ticket['price'], 0, ',', '.') ?> ₫
       </p>
 
-      <p><strong><i class="bi bi-calendar-check"></i> Đặt lúc:</strong>
+      <p><strong>Đặt lúc:</strong>
         <?= date("d/m/Y H:i", strtotime($ticket['booked_at'])) ?>
       </p>
 
-      <p><strong><i class="bi bi-receipt-cutoff"></i> Trạng thái:</strong>
+      <p><strong>Trạng thái:</strong>
         <?php
-        if ($ticket['status'] === 'confirmed') echo "<span style='color:#2ecc71;font-weight:600;'>Đã xác nhận</span>";
-        elseif ($ticket['status'] === 'paid') echo "<span style='color:#3498db;font-weight:600;'>Đã thanh toán</span>";
-        elseif ($ticket['status'] === 'pending') echo "<span style='color:#f39c12;font-weight:600;'>Chờ thanh toán</span>";
-        else echo "<span style='color:#e74c3c;font-weight:600;'>Đã hủy</span>";
+        if ($ticket['status'] === 'confirmed') echo "<span style='color:#2ecc71;'>Đã xác nhận</span>";
+        elseif ($ticket['status'] === 'paid') echo "<span style='color:#3498db;'>Đã thanh toán</span>";
+        elseif ($ticket['status'] === 'pending') echo "<span style='color:#f39c12;'>Chờ thanh toán</span>";
+        else echo "<span style='color:#e74c3c;'>Đã hủy</span>";
         ?>
       </p>
     </div>
   </div>
 
-  <!-- QR PAYMENT -->
   <?= $qrBlock ?>
 
   <div style="text-align:center;margin-top:30px;">

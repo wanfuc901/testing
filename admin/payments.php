@@ -32,8 +32,8 @@ if ($search !== '') {
        AND (
             p.provider_txn_id LIKE '%$esc%' 
          OR p.payment_id LIKE '%$esc%' 
-         OR u.email LIKE '%$esc%' 
-         OR u.name LIKE '%$esc%' 
+         OR c.email LIKE '%$esc%'
+         OR c.fullname LIKE '%$esc%'
          OR p.amount LIKE '%$esc%'
        )
     ";
@@ -52,7 +52,7 @@ $offset = ($page - 1) * $perPage;
 $qTotal = $conn->query("
     SELECT COUNT(*) AS c
     FROM payments p
-    LEFT JOIN users u ON u.user_id = p.user_id
+    LEFT JOIN customers c ON c.customer_id = p.customer_id
     $whereSQL
 ");
 
@@ -69,12 +69,12 @@ $totalPages = ceil($total / $perPage);
 $sql = "
 SELECT 
     p.*,
-    u.name AS fullname,
-    u.email,
+    c.fullname,
+    c.email,
     (SELECT COUNT(*) FROM tickets t WHERE t.payment_id = p.payment_id) AS ticket_count,
     (SELECT COUNT(*) FROM payment_combos pc WHERE pc.payment_id = p.payment_id) AS combo_count
 FROM payments p
-LEFT JOIN users u ON u.user_id = p.user_id
+LEFT JOIN customers c ON c.customer_id = p.customer_id
 $whereSQL
 ORDER BY p.payment_id DESC
 LIMIT $perPage OFFSET $offset
@@ -145,8 +145,8 @@ if (!$result) {
     <td><?=$p['payment_id']?></td>
 
     <td>
-        <?=htmlspecialchars($p['fullname'] ?: 'Khách vô danh')?> <br>
-        <span class="help"><?=htmlspecialchars($p['email'])?></span>
+        <?= htmlspecialchars($p['fullname'] ?: 'Khách vô danh') ?><br>
+        <span class="help"><?= htmlspecialchars($p['email']) ?></span>
     </td>
 
     <td><?=htmlspecialchars($p['provider_txn_id'])?></td>
@@ -241,6 +241,4 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
-
-
 </script>

@@ -17,20 +17,32 @@ $_SESSION['last_active'] = time();
 $page = $_GET['p'] ?? 'home';
 $role = $_SESSION['role'] ?? 'guest';
 
-/* ===== Trang KHÔNG HIỂN THỊ menu + footer + loader ===== */
+/* ===== Trang không có menu/footer ===== */
 $noLayout = ["login", "rg", "fp"];
 
-/* ===== Điều hướng quyền ===== */
-if ($page !== 'logout') {
+/* ====================================================
+   PHÂN QUYỀN CHUẨN
+==================================================== */
 
-    // Admin mà vào trang không phải admin → đẩy về admin_dashboard
-    if ($role === 'admin' && substr($page, 0, 5) !== 'admin') {
+/* ADMIN → chỉ được vào admin/... */
+if ($role === "admin") {
+    if (substr($page, 0, 5) !== "admin") {
         header("Location: index.php?p=admin_dashboard");
         exit;
     }
+}
 
-    // User mà vào admin → đẩy về home
-    if ($role === 'user' && substr($page, 0, 5) === 'admin') {
+/* CUSTOMER → KHÔNG được vào admin */
+if ($role === "customer") {
+    if (substr($page, 0, 5) === "admin") {
+        header("Location: index.php?p=home");
+        exit;
+    }
+}
+
+/* USER → KHÔNG được vào admin */
+if ($role === "user") {
+    if (substr($page, 0, 5) === "admin") {
         header("Location: index.php?p=home");
         exit;
     }
@@ -38,7 +50,7 @@ if ($page !== 'logout') {
 
 
 /* ===== Nạp router chính ===== */
-require_once "app/controllers/main.php"; // nhớ kiểm tra đường dẫn này
+require_once "app/controllers/main.php";
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -52,16 +64,21 @@ require_once "app/controllers/main.php"; // nhớ kiểm tra đường dẫn nà
 <body class="<?php echo in_array($page, $noLayout) ? 'vc-auth-body' : ''; ?>">
 
 <?php
+/* Loader */
 if (!in_array($page, $noLayout)) {
     include "public/loading/loader.php";
 }
 
+/* ===== Gọi main router ===== */
 if (function_exists('main')) {
 
-    if ($role === 'admin') {
+    /* ADMIN */
+    if ($role === "admin") {
         main();
-    } else {
+    }
 
+    /* USER + CUSTOMER + GUEST */
+    else {
         if (!in_array($page, $noLayout)) {
             include "app/views/layouts/menu.php";
         }
@@ -74,7 +91,7 @@ if (function_exists('main')) {
     }
 
 } else {
-    echo "<p style='color:red;text-align:center'>⚠️ Lỗi: chưa định nghĩa hàm main() trong app/controllers/main.php</p>";
+    echo "<p style='color:red;text-align:center'>⚠ Lỗi: main() chưa tồn tại!</p>";
 }
 ?>
 </body>
