@@ -1,6 +1,0 @@
-|   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   +-- images 
-        qdcl3.png
-        VincentCinemas_structure.txt
-      [images]
-        qdcl3.png
-        VincentCinemas_structure.txt

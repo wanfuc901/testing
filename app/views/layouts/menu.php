@@ -13,7 +13,6 @@ $displayName = $_SESSION['fullname']
             ?? "Tài khoản";
 ?>
 <link rel="stylesheet" href="public/assets/boxicon/css/boxicons.min.css">
-<link rel="stylesheet" href="public/assets/boxicons-free/free/fonts/basic/boxicons.min.css">
 <link rel="stylesheet" href="public/assets/css/style.css">
 
 <header class="topmenu">
@@ -33,9 +32,10 @@ $displayName = $_SESSION['fullname']
 
       <!-- Dropdown phim -->
       <div class="dropdown">
-        <a href="#" class="drop-btn">
-          <i class='bx bxs-video'></i> Phim <i class='bx bx-chevron-down'></i>
-        </a>
+       <a href="index.php?p=am" class="drop-btn">
+  <i class='bx bxs-video'></i> Phim <i class='bx bx-chevron-down'></i>
+</a>
+
         <div class="dropdown-content">
           <a href="index.php?p=nowshowing"><i class='bx bx-play-circle'></i> Đang chiếu</a>
           <a href="index.php?p=upcoming"><i class='bx bx-time-five'></i> Sắp chiếu</a>

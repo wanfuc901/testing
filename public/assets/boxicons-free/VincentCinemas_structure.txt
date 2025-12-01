@@ -1,4 +1,0 @@
-|   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   +-- boxicons-free 
-      [boxicons-free]
-      [boxicons-free]
-        VincentCinemas_structure.txt
