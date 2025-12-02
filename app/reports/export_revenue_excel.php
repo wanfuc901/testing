@@ -17,13 +17,21 @@ $sql = "
   SELECT DATE_FORMAT(COALESCE(p.paid_at, t.booked_at), '%Y-%m') AS Thang,
          SUM(COALESCE(p.amount, t.price)) AS DoanhThu
   FROM tickets t
-  LEFT JOIN payments p ON p.ticket_id=t.ticket_id AND p.status='success'
+  LEFT JOIN payments p 
+         ON p.payment_id = t.payment_id 
+        AND p.status='success'
   WHERE (t.status='confirmed' OR t.paid=1)
     AND DATE(COALESCE(p.paid_at, t.booked_at)) BETWEEN '$from' AND '$to'
   GROUP BY DATE_FORMAT(COALESCE(p.paid_at, t.booked_at), '%Y-%m')
   ORDER BY Thang ASC
 ";
+
 $data = $conn->query($sql);
+if(!$data){
+    die("SQL ERROR: " . $conn->error . "<br><pre>$sql</pre>");
+}
+
+
 
 /* === Tạo Excel === */
 $spreadsheet = new Spreadsheet();

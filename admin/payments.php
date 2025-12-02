@@ -211,14 +211,119 @@ if (!$result) {
 </style>
 
 <script>
-function showDetail(id){
-    fetch("app/controllers/admin/payments_controller.php?action=detail&id="+id)
-    .then(res=>res.text())
-    .then(html=>{
-        document.querySelector("#popupContent").innerHTML = html;
-        document.querySelector("#popup").style.display = "flex";
-    });
+function showDetail(id) {
+    fetch("app/controllers/admin/payments_controller.php?action=detail&id=" + id)
+        .then(res => res.text())
+        .then(html => {
+
+            // Gắn nội dung popup + nút IN
+            document.querySelector("#popupContent").innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <h2 style="margin:0;font-size:20px;color:#e50914;font-weight:700">
+                        Chi tiết hóa đơn #${id}
+                    </h2>
+
+                    <button class="btn primary" onclick="printInvoice(${id})">
+                        <i class='bi bi-printer'></i> In hóa đơn
+                    </button>
+                </div>
+
+                ${html}
+            `;
+
+            document.querySelector("#popup").style.display = "flex";
+        });
 }
+
+function printInvoice(id) {
+
+    // Lấy dữ liệu chi tiết thuần HTML từ API
+    fetch("app/controllers/admin/payments_controller.php?action=detail_raw&id=" + id)
+        .then(res => res.json())
+        .then(data => {
+
+            const printWin = window.open("", "", "width=900,height=650");
+
+            printWin.document.write(`
+                <html>
+                <head>
+                    <title>Hóa đơn #${id}</title>
+                    <meta charset="UTF-8">
+
+                    <style>
+                        body { 
+                            font-family: 'Poppins', sans-serif; 
+                            padding: 30px; 
+                            color:#222;
+                            line-height: 1.6;
+                        }
+                        .invoice-box {
+                            max-width: 800px;
+                            margin: auto;
+                            padding: 20px;
+                            border: 1px solid #eee;
+                            box-shadow: 0 0 10px rgba(0,0,0,.15);
+                            font-size: 15px;
+                        }
+                        h1 { color:#e50914; font-size: 26px; margin-bottom: 10px; }
+                        h2 { font-size: 20px; margin-top:30px; color:#333; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                        th, td { padding: 10px; border: 1px solid #ddd; }
+                        th { background: #f7f7f7; font-weight: 700; }
+                        .total {
+                            font-size: 20px;
+                            color: #e50914;
+                            font-weight: 700;
+                            text-align: right;
+                            padding-top: 10px;
+                        }
+                        .info-table td { border:none !important; padding:4px 0; }
+                        .footer { margin-top: 40px; text-align: center; color:#777; font-size: 13px; }
+                    </style>
+                </head>
+
+                <body>
+                    <div class="invoice-box">
+
+                        <h1>Vincent Cinemas</h1>
+                        <p><strong>Hóa đơn #${data.payment.payment_id}</strong></p>
+
+                        <table class="info-table">
+                            <tr><td><strong>Khách hàng:</strong> ${data.payment.fullname}</td></tr>
+                            <tr><td><strong>Email:</strong> ${data.payment.email}</td></tr>
+                            <tr><td><strong>Mã giao dịch:</strong> ${data.payment.provider_txn_id}</td></tr>
+                            <tr><td><strong>Ngày tạo:</strong> ${data.payment.created_at}</td></tr>
+                            <tr><td><strong>Trạng thái:</strong> ${data.payment.status}</td></tr>
+                        </table>
+
+                        <h2>Danh sách vé</h2>
+                        ${data.tickets_html}
+
+                        <h2>Danh sách combo</h2>
+                        ${data.combos_html}
+
+                        <p class="total">Tổng tiền: ${Number(data.payment.amount).toLocaleString()}đ</p>
+
+                        <div class="footer">
+                            Cảm ơn bạn đã đặt vé tại Vincent Cinemas<br>
+                            Vé hợp lệ khi có mã thanh toán
+                        </div>
+
+                    </div>
+
+                    <script>
+                        window.print();
+                        window.onafterprint = function(){ window.close(); }
+                    <\/script>
+                </body>
+                </html>
+            `);
+
+            printWin.document.close();
+        });
+}
+
+
 
 document.querySelector("#popup").onclick = e=>{
     if(e.target.id==="popup") e.target.style.display="none";

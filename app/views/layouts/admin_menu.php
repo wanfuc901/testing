@@ -10,6 +10,7 @@
   <ul class="sidebar-menu">
     <li><a href="index.php?p=admin_dashboard" class="nav-link"><i class='bx bxs-dashboard'></i><span>Tổng quan</span></a></li>
     <li><a href="index.php?p=admin_movies" class="nav-link"><i class='bx bxs-film'></i><span>Phim</span></a></li>
+    <li><a href="index.php?p=admin_genres" class="nav-link"> <i class='bx bxs-category'></i><span>Loại phim</span> </a></li>
     <li>
   <a href="index.php?p=admin_ranking" class="nav-link">
     <i class='bx bx-bar-chart-alt-2'></i>
@@ -34,14 +35,21 @@
   </ul>
 
   <div class="sidebar-footer">
-    <form method="get" action="index.php">
-      <input type="hidden" name="p" value="logout">
-      <button type="submit" class="logout-btn">
-        <i class='bx bx-log-out'></i><span>Đăng xuất</span>
-      </button>
-    </form>
+    <?php
+if (isset($_POST['logout_now'])) {
+    session_unset();
+    session_destroy();
+    header("Location: index.php");
+    exit;
+}
+?>
+<form method="post">
+  <button type="submit" name="logout_now" class="logout-btn">
+    <i class='bx bx-log-out'></i><span>Đăng xuất</span>
+  </button>
+</form>
   </div>
-</div>\
+</div>
 
 <script>document.addEventListener('DOMContentLoaded', () => {
   const cards = document.querySelectorAll('.card');

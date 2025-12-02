@@ -140,6 +140,10 @@ function main() {
             checkAdmin();
             include("admin/ranking.php");
             break;
+        case "admin_genres":
+            include "admin/genres.php";
+            break;
+
 
         /* ====== ĐĂNG XUẤT ====== */
         case "logout":

@@ -120,6 +120,12 @@ h2{color:#f5c518;font-size:24px;margin:0 0 20px}
         <span><?=htmlspecialchars($description)?></span>
     </div>
 
+    <div class="info-row" style="justify-content:center; border-bottom:none; margin-top:10px;">
+    <span class="label">Thời gian thanh toán còn:</span>
+    <span id="countdown" style="color:#f33; font-weight:700; margin-left:6px;">05:00</span>
+    </div>
+
+
     <div class="qr-frame">
       <img src="<?=$qrUrl?>" alt="QR Code">
     </div>
@@ -131,6 +137,51 @@ h2{color:#f5c518;font-size:24px;margin:0 0 20px}
 
   </div>
 </div>
+
+
+<script>
+let remaining = 300; // 5 phút
+
+const countdownEl = document.getElementById("countdown");
+
+function updateCountdown() {
+    let m = Math.floor(remaining / 60);
+    let s = remaining % 60;
+
+    countdownEl.textContent =
+        (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+
+    if (remaining <= 0) {
+        autoCancelPayment();
+    } else {
+        remaining--;
+        setTimeout(updateCountdown, 1000);
+    }
+}
+
+updateCountdown();
+
+/* ============================
+   GỬI AJAX HỦY ĐƠN
+============================ */
+function autoCancelPayment() {
+
+    fetch("../../../app/controllers/payment_callback.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "payment_id=<?= $payment_id ?>&action=auto_cancel"
+    })
+    .then(res => res.text())
+    .then(() => {
+        alert("Hóa đơn đã hết hạn và bị hủy tự động.");
+        window.location.href = "../../../index.php?p=home";
+    })
+    .catch(() => {
+        alert("Không thể hủy hóa đơn. Vui lòng thử lại.");
+    });
+}
+</script>
+
 
 </body>
 </html>

@@ -1,0 +1,13 @@
+{
+  "require": {
+    "phpoffice/phpspreadsheet": "^1.29"
+  },
+  "config": {
+    "platform-check": false
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    }
+  }
+}

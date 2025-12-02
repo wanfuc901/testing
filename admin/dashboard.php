@@ -27,6 +27,9 @@ $month = $conn->query("
     AND DATE_FORMAT(booked_at,'%Y-%m') = DATE_FORMAT(CURDATE(),'%Y-%m')
 ")->fetch_assoc()['s'] ?? 0;
 ?>
+
+
+
 <link rel="stylesheet" href="public/assets/bootstrap-icons/bootstrap-icons.css">
 
 <div class="admin-wrap">
