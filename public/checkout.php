@@ -3,9 +3,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 require __DIR__ . "/../app/config/config.php";
 
 /* ===== Hiển thị & ghi log lỗi khi dev ===== */
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 $logDir = __DIR__ . '/../app/storage/logs';
 if (!is_dir($logDir)) @mkdir($logDir, 0777, true);

@@ -1,66 +1,130 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-require __DIR__ . "/../config/config.php";
+/**
+ * Đặt lại mật khẩu sau khi đã xác minh OTP.
+ * Hỗ trợ cả tài khoản khách hàng (customers) lẫn nhân sự nội bộ (users).
+ */
 
-$email    = $_SESSION['reset_email'] ?? '';
-$password = trim($_POST['password'] ?? '');
-$confirm  = trim($_POST['confirm'] ?? '');
+require_once __DIR__ . '/../include/auth.php';
 
-$status = 'error';
+/** Độ dài mật khẩu tối thiểu. */
+const RESET_MIN_PASSWORD_LENGTH = 8;
+
+$password = (string)($_POST['password'] ?? '');
+$confirm  = (string)($_POST['confirm'] ?? '');
+
+$account = $_SESSION['reset_account'] ?? null;
+$email   = (string)($_SESSION['reset_email'] ?? '');
+
+$status   = 'error';
 $msgTitle = 'Lỗi hệ thống';
-$msgText = 'Không thể đặt lại mật khẩu.';
+$msgText  = 'Không thể đặt lại mật khẩu.';
+$redirect = '../../index.php?p=login';
 
-// --- Kiểm tra quyền hợp lệ ---
-if (empty($email) || empty($_SESSION['otp_verified'])) {
-    $msgTitle = 'Phiên hết hạn';
-    $msgText  = 'Vui lòng xác minh lại OTP trước khi đặt lại mật khẩu.';
+/* --- Chỉ chấp nhận POST --- */
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    $msgTitle = 'Yêu cầu không hợp lệ';
+    $msgText  = 'Vui lòng gửi biểu mẫu đặt lại mật khẩu.';
     goto render;
 }
 
-// --- Kiểm tra nhập liệu ---
+/* --- Phải qua bước xác minh OTP --- */
+if ($email === '' || empty($_SESSION['otp_verified']) || !is_array($account)) {
+    $msgTitle = 'Phiên hết hạn';
+    $msgText  = 'Vui lòng xác minh lại OTP trước khi đặt lại mật khẩu.';
+    $redirect = '../../index.php?p=fp';
+    goto render;
+}
+
+/* --- Kiểm tra nhập liệu --- */
 if ($password === '' || $confirm === '') {
     $msgTitle = 'Thiếu thông tin';
     $msgText  = 'Vui lòng nhập đầy đủ mật khẩu.';
     goto render;
 }
-if ($password !== $confirm) {
+
+if (mb_strlen($password) < RESET_MIN_PASSWORD_LENGTH) {
+    $msgTitle = 'Mật khẩu quá ngắn';
+    $msgText  = 'Mật khẩu phải có ít nhất ' . RESET_MIN_PASSWORD_LENGTH . ' ký tự.';
+    goto render;
+}
+
+if (!hash_equals($password, $confirm)) {
     $msgTitle = 'Mật khẩu không khớp';
     $msgText  = 'Vui lòng nhập lại cho chính xác.';
     goto render;
 }
 
-// --- Cập nhật mật khẩu ---
-$hashed = password_hash($password, PASSWORD_BCRYPT);
-$stmt = $conn->prepare("UPDATE users SET password=? WHERE email=? LIMIT 1");
-$stmt->bind_param("ss", $hashed, $email);
+/* --- Cập nhật đúng bảng chứa tài khoản --- */
+$isCustomer = ($account['table'] ?? '') === 'customers';
+$sql = $isCustomer
+    ? 'UPDATE customers SET password = ? WHERE customer_id = ? LIMIT 1'
+    : 'UPDATE users SET password = ? WHERE user_id = ? LIMIT 1';
 
-if ($stmt->execute()) {
-    // ✅ Lấy lại thông tin người dùng để đăng nhập ngay
-    $stmt2 = $conn->prepare("SELECT user_id, name, email, role FROM users WHERE email=? LIMIT 1");
-    $stmt2->bind_param("s", $email);
-    $stmt2->execute();
-    $user = $stmt2->get_result()->fetch_assoc();
+$hashed    = password_hash($password, PASSWORD_BCRYPT);
+$accountId = (int)$account['id'];
 
-    if ($user) {
-        $_SESSION['user_id'] = $user['user_id'];
-        $_SESSION['name']    = $user['name'];
-        $_SESSION['email']   = $user['email'];
-        $_SESSION['role']    = $user['role'];
-        $_SESSION['last_active'] = time();
-    }
-
-    unset($_SESSION['otp_verified'], $_SESSION['reset_email']);
-
-    $status = 'success';
-    $msgTitle = 'Đặt lại mật khẩu thành công';
-    $msgText  = 'Hệ thống đang đăng nhập cho bạn...';
-    $redirect = ($user['role'] === 'admin')
-        ? "../../index.php?p=admin_dashboard"
-        : "../../index.php?p=home";
-} else {
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    error_log('[vincine] reset_password prepare failed: ' . $conn->error);
     $msgTitle = 'Không thể cập nhật';
     $msgText  = 'Vui lòng thử lại sau.';
+    goto render;
 }
+
+$stmt->bind_param('si', $hashed, $accountId);
+$ok = $stmt->execute();
+$stmt->close();
+
+if (!$ok) {
+    error_log('[vincine] reset_password update failed: ' . $conn->error);
+    $msgTitle = 'Không thể cập nhật';
+    $msgText  = 'Vui lòng thử lại sau.';
+    goto render;
+}
+
+/* --- Đăng nhập lại bằng phiên mới --- */
+vincine_start_authenticated_session();
+
+unset($_SESSION['otp_verified'], $_SESSION['reset_email'], $_SESSION['reset_account']);
+
+if ($isCustomer) {
+    $stmt = $conn->prepare('SELECT customer_id, fullname, email FROM customers WHERE customer_id = ? LIMIT 1');
+    $stmt->bind_param('i', $accountId);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    $_SESSION['customer_id'] = $accountId;
+    $_SESSION['fullname']    = (string)($row['fullname'] ?? '');
+    $_SESSION['email']       = (string)($row['email'] ?? $email);
+    $_SESSION['role']        = VINCINE_ROLE_CUSTOMER;
+    $redirect                = '../../index.php?p=home';
+} else {
+    $stmt = $conn->prepare('SELECT user_id, name, email, role FROM users WHERE user_id = ? LIMIT 1');
+    $stmt->bind_param('i', $accountId);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    $role = in_array($row['role'] ?? '', [VINCINE_ROLE_ADMIN, VINCINE_ROLE_STAFF], true)
+        ? (string)$row['role']
+        : VINCINE_ROLE_STAFF;
+
+    $_SESSION['user_id'] = $accountId;
+    $_SESSION['name']    = (string)($row['name'] ?? '');
+    $_SESSION['email']   = (string)($row['email'] ?? $email);
+    $_SESSION['role']    = $role;
+    $redirect            = ($role === VINCINE_ROLE_ADMIN)
+        ? '../../index.php?p=admin_dashboard'
+        : '../../index.php?p=home';
+}
+
+$_SESSION['last_active'] = time();
+
+$status   = 'success';
+$msgTitle = 'Đặt lại mật khẩu thành công';
+$msgText  = 'Hệ thống đang đăng nhập cho bạn...';
 
 render:
 ?>
@@ -166,13 +230,13 @@ setTimeout(() => {
   spinner.style.display = 'none';
   <?php if ($status === 'success'): ?>
     checkmark.style.display = 'block';
-    title.innerText = "<?= $msgTitle ?>";
-    text.innerText  = "<?= $msgText ?>";
-    setTimeout(() => window.location.href = "<?= $redirect ?>", holdTime);
+    title.innerText = <?= json_encode($msgTitle, JSON_UNESCAPED_UNICODE) ?>;
+    text.innerText  = <?= json_encode($msgText, JSON_UNESCAPED_UNICODE) ?>;
+    setTimeout(() => window.location.href = <?= json_encode($redirect) ?>, holdTime);
   <?php else: ?>
     errormark.style.display = 'block';
-    title.innerText = "<?= $msgTitle ?>";
-    text.innerText  = "<?= $msgText ?>";
+    title.innerText = <?= json_encode($msgTitle, JSON_UNESCAPED_UNICODE) ?>;
+    text.innerText  = <?= json_encode($msgText, JSON_UNESCAPED_UNICODE) ?>;
     setTimeout(() => window.location.href = "../../public/verify_otp.php", holdTime);
   <?php endif; ?>
 }, loadingTime);

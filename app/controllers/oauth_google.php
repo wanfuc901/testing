@@ -1,87 +1,161 @@
 <?php
-session_start();
-require_once __DIR__ . '/../config/config.php';
+/**
+ * Đăng nhập bằng Google Identity Services.
+ *
+ * BẮT BUỘC xác thực chữ ký của ID token với Google trước khi tin payload.
+ * Tự giải mã base64 phần payload là lỗ hổng chiếm tài khoản: bất kỳ ai cũng
+ * tạo được token chứa email tùy ý.
+ */
 
-if (!isset($_POST['credential'])) {
-    header("Location: ../../index.php?p=login");
-    exit;
+declare(strict_types=1);
+
+require_once __DIR__ . '/../include/auth.php';
+
+const GOOGLE_TOKENINFO_URL = 'https://oauth2.googleapis.com/tokeninfo';
+const GOOGLE_VALID_ISSUERS = ['accounts.google.com', 'https://accounts.google.com'];
+
+$status   = 'error';
+$msgTitle = 'Lỗi đăng nhập';
+$msgText  = 'Không thể xác thực tài khoản Google.';
+$redirect = '../../index.php?p=login';
+
+/**
+ * Gọi endpoint tokeninfo của Google để xác thực ID token.
+ *
+ * @return array<string,mixed>|null payload đã được Google xác nhận, null nếu không hợp lệ.
+ */
+function vincine_verify_google_token(string $idToken): ?array
+{
+    $ch = curl_init(GOOGLE_TOKENINFO_URL . '?id_token=' . urlencode($idToken));
+    if ($ch === false) {
+        return null;
+    }
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
+    ]);
+
+    try {
+        $body = curl_exec($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+
+        if ($body === false || $code !== 200) {
+            error_log('[vincine] Google tokeninfo failed: HTTP ' . $code . ' ' . curl_error($ch));
+            return null;
+        }
+    } finally {
+        curl_close($ch);
+    }
+
+    $payload = json_decode((string)$body, true);
+    if (!is_array($payload)) {
+        return null;
+    }
+
+    // Token phải được phát hành cho đúng ứng dụng này.
+    if (GOOGLE_CLIENT_ID === '' || ($payload['aud'] ?? '') !== GOOGLE_CLIENT_ID) {
+        error_log('[vincine] Google token aud mismatch');
+        return null;
+    }
+
+    if (!in_array($payload['iss'] ?? '', GOOGLE_VALID_ISSUERS, true)) {
+        return null;
+    }
+
+    if ((int)($payload['exp'] ?? 0) <= time()) {
+        return null;
+    }
+
+    // Google trả về chuỗi "true"/"false" cho trường này.
+    if (filter_var($payload['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN) !== true) {
+        return null;
+    }
+
+    $email = trim((string)($payload['email'] ?? ''));
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return null;
+    }
+
+    return $payload;
 }
 
-$jwt = $_POST['credential'];
-
-/* =============================
-   GIẢI MÃ JWT GOOGLE
-============================= */
-function decodeJWT($jwt) {
-    $parts = explode('.', $jwt);
-    if (count($parts) !== 3) return null;
-
-    $payload = $parts[1];
-    $payload = str_replace(['-', '_'], ['+', '/'], $payload);
-    $payload .= str_repeat('=', 3 - (strlen($payload) % 4));
-
-    return json_decode(base64_decode($payload), true);
-}
-
-$data = decodeJWT($jwt);
-
-if (!$data || !isset($data['email'])) {
-    $status = 'error';
-    $msgTitle = 'Lỗi đăng nhập';
-    $msgText  = 'Không thể xác thực tài khoản Google.';
-    $redirect = '../../index.php?p=login';
+/* ====================================================
+   1) NHẬN & XÁC THỰC TOKEN
+==================================================== */
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    $msgText = 'Phương thức không hợp lệ.';
     goto render;
 }
 
-$email = $data['email'];
-$name  = $data['name'] ?? "Người dùng Google";
-
-$conn->set_charset('utf8mb4');
-
-/* =============================
-   1. KIỂM TRA CUSTOMER
-============================= */
-$stmt = $conn->prepare("
-    SELECT customer_id, fullname 
-    FROM customers 
-    WHERE email=? LIMIT 1
-");
-$stmt->bind_param("s", $email);
-$stmt->execute();
-$rs = $stmt->get_result();
-
-/* =============================
-   2. CHƯA CÓ → TẠO MỚI
-============================= */
-if ($rs->num_rows === 0) {
-    $stmt = $conn->prepare("
-        INSERT INTO customers(fullname, email, password)
-        VALUES(?, ?, '')
-    ");
-    $stmt->bind_param("ss", $name, $email);
-    $stmt->execute();
-
-    $customer_id = $stmt->insert_id;
-
-} else {
-    $row = $rs->fetch_assoc();
-    $customer_id = $row['customer_id'];
+$idToken = trim((string)($_POST['credential'] ?? ''));
+if ($idToken === '') {
+    goto render;
 }
 
-/* =============================
-   3. SET SESSION
-============================= */
-$_SESSION['customer_id']  = $customer_id;
-$_SESSION['fullname']     = $name;
-$_SESSION['email']        = $email;
-$_SESSION['role']         = 'customer';
-$_SESSION['last_active']  = time();
+$claims = vincine_verify_google_token($idToken);
+if ($claims === null) {
+    http_response_code(401);
+    $msgText = 'Token Google không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.';
+    goto render;
+}
 
-$status = 'success';
+$email = (string)$claims['email'];
+$name  = trim((string)($claims['name'] ?? '')) ?: 'Người dùng Google';
+
+/* ====================================================
+   2) TÌM HOẶC TẠO KHÁCH HÀNG
+==================================================== */
+$stmt = $conn->prepare("SELECT customer_id, fullname FROM customers WHERE email = ? LIMIT 1");
+if (!$stmt) {
+    error_log('[vincine] oauth_google prepare failed: ' . $conn->error);
+    http_response_code(500);
+    $msgText = 'Hệ thống đang bận. Vui lòng thử lại sau.';
+    goto render;
+}
+
+$stmt->bind_param('s', $email);
+$stmt->execute();
+$existing = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
+if ($existing) {
+    $customerId = (int)$existing['customer_id'];
+    $name       = (string)$existing['fullname'];
+} else {
+    // Tài khoản Google không có mật khẩu cục bộ -> password rỗng.
+    $insert = $conn->prepare("INSERT INTO customers (fullname, email, password) VALUES (?, ?, '')");
+    if (!$insert) {
+        error_log('[vincine] oauth_google insert prepare failed: ' . $conn->error);
+        http_response_code(500);
+        $msgText = 'Không thể tạo tài khoản. Vui lòng thử lại sau.';
+        goto render;
+    }
+
+    $insert->bind_param('ss', $name, $email);
+    $insert->execute();
+    $customerId = (int)$insert->insert_id;
+    $insert->close();
+}
+
+/* ====================================================
+   3) TẠO PHIÊN ĐĂNG NHẬP
+==================================================== */
+vincine_start_authenticated_session();
+
+$_SESSION['customer_id'] = $customerId;
+$_SESSION['fullname']    = $name;
+$_SESSION['email']       = $email;
+$_SESSION['role']        = VINCINE_ROLE_CUSTOMER;
+$_SESSION['last_active'] = time();
+
+$status   = 'success';
 $msgTitle = 'Đăng nhập thành công';
-$msgText  = 'Xin chào, ' . htmlspecialchars($name) . '!';
+$msgText  = 'Xin chào, ' . $name . '!';
 $redirect = '../../index.php?p=home';
-
 
 /* =============================
    TRANG CHỜ ANIMATION
@@ -187,10 +261,10 @@ setTimeout(() => {
 
   <?php if ($status === 'success'): ?>
     document.getElementById('checkmark').style.display = 'block';
-    setTimeout(() => { window.location.href = "<?= $redirect ?>"; }, 2500);
+    setTimeout(() => { window.location.href = "<?= htmlspecialchars($redirect, ENT_QUOTES, "UTF-8") ?>"; }, 2500);
   <?php else: ?>
     document.getElementById('errormark').style.display = 'block';
-    setTimeout(() => { window.location.href = "<?= $redirect ?>"; }, 2500);
+    setTimeout(() => { window.location.href = "<?= htmlspecialchars($redirect, ENT_QUOTES, "UTF-8") ?>"; }, 2500);
   <?php endif; ?>
 
 }, 1500);

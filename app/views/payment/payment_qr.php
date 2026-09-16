@@ -1,27 +1,36 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+/**
+ * Trang QR chuyển khoản của một đơn hàng.
+ * Chỉ chủ đơn mới xem được — trang hiển thị số ghế, số tiền và tài khoản nhận.
+ */
 
-require __DIR__ . "/../../config/config.php";
-
-$conn->set_charset("utf8mb4");
-date_default_timezone_set("Asia/Ho_Chi_Minh");
+require_once __DIR__ . '/../../include/auth.php';
 
 /* ============================
    LẤY payment_id
 ============================ */
-$payment_id = intval($_GET['payment_id'] ?? 0);
-if ($payment_id <= 0) die("payment_id không hợp lệ");
+$payment_id = (int)($_GET['payment_id'] ?? 0);
+if ($payment_id <= 0) {
+    http_response_code(400);
+    exit('payment_id không hợp lệ');
+}
+
+vincine_require_customer();
+$customer_id = vincine_customer_id();
 
 /* ============================
-   LẤY PAYMENT
+   LẤY PAYMENT CỦA CHÍNH MÌNH
 ============================ */
-$stmt = $conn->prepare("SELECT * FROM payments WHERE payment_id = ?");
-$stmt->bind_param("i", $payment_id);
+$stmt = $conn->prepare("SELECT * FROM payments WHERE payment_id = ? AND customer_id = ?");
+$stmt->bind_param('ii', $payment_id, $customer_id);
 $stmt->execute();
 $pay = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-if (!$pay) die("Không tìm thấy hóa đơn");
+if (!$pay) {
+    http_response_code(404);
+    exit('Không tìm thấy hóa đơn');
+}
 
 $data = json_decode($pay['order_data'], true);
 if (!$data) die("order_data lỗi hoặc trống");
@@ -57,10 +66,23 @@ $total_amount = (float)$data['total_amount'];
 ============================ */
 $orderCode       = $pay['provider_txn_id'];
 $description     = "Thanh toan ma don {$orderCode}";
-$account_name    = "PHAM HOANG PHUC";
-$account_number  = "0944649923";
-$bank_code       = "970422"; // MBBank
+$bankRs = $conn->query("
+  SELECT * FROM payment_accounts
+  WHERE is_active = 1
+  LIMIT 1
+");
+$bank = $bankRs ? $bankRs->fetch_assoc() : null;
 
+if (!$bank) {
+    error_log('[vincine] payment_qr: chưa cấu hình payment_accounts');
+    http_response_code(500);
+    exit('Chưa cấu hình tài khoản thanh toán');
+}
+
+$account_name   = $bank['account_name'];
+$account_number = $bank['account_number'];
+$bank_code      = $bank['bank_code'];
+$bank_name      = $bank['bank_name'];
 /* ============================
    QR
 ============================ */

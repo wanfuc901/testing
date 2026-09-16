@@ -1,54 +1,75 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-require __DIR__ . "/../config/config.php";
-require __DIR__ . "/../../vendor/phpmailer/PHPMailer.php";
-require __DIR__ . "/../../vendor/phpmailer/SMTP.php";
-require __DIR__ . "/../../vendor/phpmailer/Exception.php";
+/**
+ * Gửi mã OTP đặt lại mật khẩu cho khách hàng hoặc nhân sự nội bộ.
+ */
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
+require_once __DIR__ . '/../include/auth.php';
+require_once __DIR__ . '/../../helpers/mailer.php';
 
-$email = trim($_POST['email'] ?? '');
-$msg = "";
+/** Thông báo dùng chung: không tiết lộ email nào có tài khoản. */
+const OTP_SENT_NOTICE = '📧 Nếu email tồn tại trong hệ thống, mã OTP đã được gửi tới hộp thư của bạn.';
 
-if (empty($email)) {
-    $msg = "❌ Email không hợp lệ.";
+$email = trim((string)($_POST['email'] ?? ''));
+$msg   = '';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    $msg = '❌ Email không hợp lệ.';
     goto render;
 }
 
-// ✅ Kiểm tra tài khoản tồn tại
-$stmt = $conn->prepare("SELECT user_id, name FROM users WHERE email=?");
-$stmt->bind_param("s", $email);
-$stmt->execute();
-$user = $stmt->get_result()->fetch_assoc();
+/**
+ * Tìm tài khoản theo email trên cả hai bảng.
+ *
+ * @return array{table: string, id: int, name: string}|null
+ */
+function vincine_find_reset_account(mysqli $conn, string $email): ?array
+{
+    $lookups = [
+        ['customers', 'SELECT customer_id AS id, fullname AS name FROM customers WHERE email = ? LIMIT 1'],
+        ['users',     'SELECT user_id AS id, name FROM users WHERE email = ? LIMIT 1'],
+    ];
 
-if (!$user) {
-    $msg = "❌ Không tìm thấy tài khoản với email này.";
+    foreach ($lookups as [$table, $sql]) {
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            error_log('[vincine] send_otp prepare failed: ' . $conn->error);
+            continue;
+        }
+
+        $stmt->bind_param('s', $email);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if ($row) {
+            return ['table' => $table, 'id' => (int)$row['id'], 'name' => (string)$row['name']];
+        }
+    }
+
+    return null;
+}
+
+$account = vincine_find_reset_account($conn, $email);
+
+if ($account === null) {
+    // Trả lời giống hệt trường hợp thành công để tránh dò email.
+    $msg = OTP_SENT_NOTICE;
     goto render;
 }
 
-// ✅ Tạo OTP
-$otp = rand(100000, 999999);
-$_SESSION['reset_email'] = $email;
-$_SESSION['reset_otp'] = $otp;
-$_SESSION['otp_expire'] = time() + 300; // 5 phút
+/* OTP phải sinh bằng nguồn ngẫu nhiên mật mã, không dùng rand(). */
+$otp = (string)random_int(100000, 999999);
 
-// ✅ Gửi email
-$mail = new PHPMailer(true);
+$_SESSION['reset_email']    = $email;
+$_SESSION['reset_account']  = $account;
+$_SESSION['reset_otp']      = $otp;
+$_SESSION['otp_expire']     = time() + VINCINE_OTP_LIFETIME;
+$_SESSION['otp_attempts']   = 0;
+unset($_SESSION['otp_verified']);
+
 try {
-    $mail->isSMTP();
-    $mail->Host       = "smtp.gmail.com";
-    $mail->SMTPAuth   = true;
-    $mail->Username   = "phuc.pham.vst@gmail.com"; // ⚠️ đổi thành email gửi thật
-    $mail->Password   = "fvde ashj zbgq ohtr";     // ⚠️ App password Gmail
-    $mail->SMTPSecure = "tls";
-    $mail->Port       = 587;
-
-    $mail->CharSet = "UTF-8";
-    $mail->Encoding = "base64";
-
-    $mail->setFrom("phuc.pham.vst@gmail.com", "VinCine Support");
-    $mail->addAddress($email, $user['name'] ?? 'Người dùng');
+    $mail = vincine_mailer();
+    $mail->addAddress($email, $account['name'] ?: 'Người dùng');
     $mail->isHTML(true);
     $mail->Subject = "VinCine";
 
@@ -69,7 +90,7 @@ try {
     </div>
 
     <div style='padding:30px;'>
-      <h2 style='color:#d4af37;font-size:20px;margin-top:0;'>Xin chào <span style='color:#000;'>{$user['name']}</span>,</h2>
+      <h2 style='color:#d4af37;font-size:20px;margin-top:0;'>Xin chào <span style='color:#000;'>" . htmlspecialchars($account['name'] ?: 'bạn', ENT_QUOTES, 'UTF-8') . "</span>,</h2>
       <p style='font-size:15px;line-height:1.6;color:#333;'>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản 
          <b style='color:#e50914;'>VinCine</b> của bạn.</p>
 
@@ -100,11 +121,13 @@ try {
 ";
 
     $mail->send();
-    header("Location:../../public/verify_otp.php");
+    header('Location: ../../public/verify_otp.php');
     exit;
 
-} catch (Exception $e) {
-    $msg = "⚠️ Không thể gửi email: " . htmlspecialchars($mail->ErrorInfo);
+} catch (Throwable $e) {
+    $detail = isset($mail) ? $mail->ErrorInfo : $e->getMessage();
+    error_log('[vincine] send_otp mail failed: ' . $detail);
+    $msg = '⚠️ Không gửi được email vào lúc này. Vui lòng thử lại sau.';
 }
 
 render:

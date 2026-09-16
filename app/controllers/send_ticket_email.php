@@ -1,18 +1,21 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+/**
+ * Gửi mail vé cho khách. Được require từ luồng đặt vé, nhận $payment_id
+ * từ scope gọi.
+ */
 
-require_once __DIR__ . "/../config/config.php";
-require_once __DIR__ . "/../../vendor/phpmailer/PHPMailer.php";
-require_once __DIR__ . "/../../vendor/phpmailer/SMTP.php";
-require_once __DIR__ . "/../../vendor/phpmailer/Exception.php";
+require_once __DIR__ . '/../include/auth.php';
+require_once __DIR__ . '/../../helpers/mailer.php';
 
-use PHPMailer\PHPMailer\PHPMailer;
+/* ==========================================================
+   NHẬN PAYMENT ID
+========================================================== */
+$pid = intval($payment_id ?? 0);
+if ($pid <= 0) return;
 
-$pid = intval($payment_id);
-
-/* ============================
-   LẤY PAYMENT + THÔNG TIN KHÁCH
-============================ */
+/* ==========================================================
+   LẤY PAYMENT + KHÁCH HÀNG
+========================================================== */
 $sql = "
     SELECT p.*, c.email, c.fullname
     FROM payments p
@@ -21,26 +24,19 @@ $sql = "
 ";
 
 $stmt = $conn->prepare($sql);
-if (!$stmt) {
-    die("SQL ERROR: " . $conn->error . "<br>SQL:<br>" . $sql);
-}
-
 $stmt->bind_param("i", $pid);
 $stmt->execute();
 $pay = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-if (!$pay) return;
+if (!$pay || empty($pay['email'])) return;
 
-/* ============================
-   ORDER DATA
-============================ */
+/* ==========================================================
+   GHẾ TỪ ORDER_DATA
+========================================================== */
 $data = json_decode($pay['order_data'], true);
-$seatArr = $data['seats'];
+$seatArr = $data['seats'] ?? [];
 
-/* ============================
-   GHÉP GHẾ
-============================ */
 $labels = [];
 $q = $conn->prepare("SELECT row_number, col_number FROM seats WHERE seat_id=?");
 
@@ -53,31 +49,38 @@ foreach ($seatArr as $sid) {
     }
 }
 $q->close();
-/* ============================
+
+/* ==========================================================
+   PHÂN BIỆT HÌNH THỨC THANH TOÁN
+========================================================== */
+$isOnline = ($pay['method'] === 'online');
+
+$paymentText = $isOnline
+    ? "ĐÃ THANH TOÁN ONLINE"
+    : "THANH TOÁN TẠI QUẦY";
+
+$noteText = $isOnline
+    ? "Vé đã được thanh toán. Vui lòng xuất trình mã QR khi vào rạp."
+    : "Vui lòng thanh toán tại quầy trước giờ chiếu để nhận vé.";
+
+/* ==========================================================
    SEND MAIL
-============================ */
-$mail = new PHPMailer(true);
+========================================================== */
+try {
+    $mail = vincine_mailer();
+} catch (RuntimeException $e) {
+    error_log('[vincine] ' . $e->getMessage());
+    return;
+}
 
-$mail->CharSet  = 'UTF-8';
-$mail->Encoding = 'base64';
-
-$mail->isSMTP();
-$mail->Host       = "smtp.gmail.com";
-$mail->SMTPAuth   = true;
-$mail->SMTPSecure = "tls";
-$mail->Port       = 587;
-
-$mail->Username   = "phuc.pham.vst@gmail.com";
-$mail->Password   = "fvde ashj zbgq ohtr"; // nhớ sau này dùng biến môi trường
-
-// Nên để From trùng tài khoản Gmail để tránh bị đánh spam
-$mail->setFrom("phuc.pham.vst@gmail.com", "Vincent Cinemas");
 $mail->addAddress($pay['email'], $pay['fullname']);
 
-$mail->Subject = "Vé xem phim #{$pid}";
+$mail->Subject = "Vé xem phim #{$pid} – Vincent Cinemas";
 $mail->isHTML(true);
 
-
+/* ==========================================================
+   EMAIL BODY (GIỮ STYLE – CHỈ SỬA NỘI DUNG)
+========================================================== */
 $mail->Body = '
 
 <div style="
@@ -91,7 +94,6 @@ $mail->Body = '
     border:1px solid #222222;
 ">
 
-    <!-- BRAND TEXT HEADER -->
     <div style="text-align:center; margin-bottom:16px;">
         <div style="
             display:inline-block;
@@ -107,9 +109,8 @@ $mail->Body = '
         </div>
     </div>
 
-    <!-- TITLE -->
     <h2 style="
-        margin:10px 0 4px;
+        margin:10px 0 6px;
         color:#f5c518;
         font-weight:700;
         text-align:center;
@@ -118,42 +119,38 @@ $mail->Body = '
         THÔNG TIN VÉ XEM PHIM
     </h2>
 
-    <p style="text-align:center; font-size:13px; color:#aaaaaa; margin:0 0 14px;">
-        Cảm ơn bạn đã đặt vé tại <strong style="color:#f5c518;">Vincent Cinemas</strong>.
+    <p style="
+        text-align:center;
+        font-size:13px;
+        margin:0 0 14px;
+        color:' . ($isOnline ? '#5cff87' : '#ffb347') . ';
+        font-weight:700;
+    ">
+        '.$paymentText.'
     </p>
 
     <div style="height:1px;background:rgba(255,255,255,.08);margin:18px 0 16px;"></div>
 
-    <!-- ORDER INFO -->
     <div style="font-size:14px; line-height:1.7; padding:0 4px;">
 
-        <p style="margin:0 0 10px;">
-            <span style="color:#999999;">Mã đơn:</span><br>
-            <strong style="font-size:16px;">'.$pay['provider_txn_id'].'</strong>
-        </p>
+        <p><span style="color:#999;">Mã đơn:</span><br>
+        <strong>'.$pay['provider_txn_id'].'</strong></p>
 
-        <p style="margin:0 0 10px;">
-            <span style="color:#999999;">Khách hàng:</span><br>
-            <strong>'.htmlspecialchars($pay['fullname']).'</strong>
-        </p>
+        <p><span style="color:#999;">Khách hàng:</span><br>
+        <strong>'.htmlspecialchars($pay['fullname']).'</strong></p>
 
-        <p style="margin:0 0 10px;">
-            <span style="color:#999999;">Ghế đã đặt:</span><br>
-            <strong>'.implode(", ", $labels).'</strong>
-        </p>
+        <p><span style="color:#999;">Ghế:</span><br>
+        <strong>'.implode(", ", $labels).'</strong></p>
 
-        <p style="margin:0 0 10px;">
-            <span style="color:#999999;">Tổng tiền:</span><br>
-            <strong style="color:#e50914; font-size:17px;">
-                '.number_format($pay['amount'], 0, ",", ".").' đ
-            </strong>
-        </p>
+        <p><span style="color:#999;">Tổng tiền:</span><br>
+        <strong style="color:#e50914;font-size:17px;">
+            '.number_format($pay['amount'],0,",",".").' đ
+        </strong></p>
 
     </div>
 
-    <!-- QR CODE -->
     <div style="
-        margin:24px auto 8px;
+        margin:22px auto 10px;
         padding:14px;
         background:#1c1c1c;
         border-radius:10px;
@@ -161,29 +158,25 @@ $mail->Body = '
         width:fit-content;
         border:1px solid #2a2a2a;
     ">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data='.urlencode($pay['provider_txn_id']).'" 
-             alt="QR vé xem phim"
-             style="display:block;border-radius:6px;">
-        <p style="font-size:12px; color:#999999; margin:8px 0 0;">
-            Đưa mã này cho nhân viên để lấy vé vật lý
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data='.urlencode($pay['provider_txn_id']).'"
+             style="border-radius:6px;">
+        <p style="font-size:12px;color:#999;margin:8px 0 0;">
+            '.$noteText.'
         </p>
     </div>
 
     <div style="height:1px;background:rgba(255,255,255,.08);margin:18px 0;"></div>
 
-    <!-- FOOTER -->
-    <p style="font-size:12px; color:#777777; text-align:center; line-height:1.5; margin:0;">
-        Email này được gửi tự động, vui lòng không trả lời.<br>
-        Nếu cần hỗ trợ, hãy liên hệ quầy dịch vụ của 
-        <strong style="color:#f5c518;">Vincent Cinemas</strong>.
+    <p style="font-size:12px;color:#777;text-align:center;margin:0;">
+        Email này được gửi tự động – vui lòng không trả lời.<br>
+        <strong style="color:#f5c518;">Vincent Cinemas</strong>
     </p>
 
 </div>
-
 ';
 
-
-
-
-$mail->send();
-?>
+try {
+    $mail->send();
+} catch (Throwable $e) {
+    error_log('[vincine] send_ticket_email failed for payment ' . $pid . ': ' . $e->getMessage());
+}

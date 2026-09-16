@@ -136,8 +136,27 @@ function submitOTP() {
   })
   .then(res => res.text())
   .then(res => {
-    if (res.trim() === 'success') correctOTP();
-    else wrongOTP();
+    const result = res.trim();
+
+    if (result === 'success') {
+      correctOTP();
+      return;
+    }
+
+    // Mã hết hạn, hết lượt thử hoặc phiên đã mất: phải xin mã mới.
+    if (result === 'expired' || result === 'locked' || result === 'no_session') {
+      const notice = {
+        expired: 'Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới.',
+        locked: 'Bạn đã nhập sai quá nhiều lần. Vui lòng yêu cầu mã mới.',
+        no_session: 'Phiên đặt lại mật khẩu đã kết thúc. Vui lòng bắt đầu lại.'
+      }[result];
+
+      alert(notice);
+      window.location.href = '../index.php?p=fp';
+      return;
+    }
+
+    wrongOTP();
   })
   .catch(wrongOTP);
 }

@@ -1,33 +1,44 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+/**
+ * Màn hình chờ admin xác nhận chuyển khoản. Chỉ chủ đơn mới xem được.
+ */
 
-require __DIR__ . "/../app/config/config.php";
+require_once __DIR__ . '/../app/include/auth.php';
 
-$conn->set_charset("utf8mb4");
+$payment_id = (int)($_GET['pid'] ?? 0);
+if ($payment_id <= 0) {
+    http_response_code(400);
+    exit('Thiếu payment_id.');
+}
 
-$payment_id = intval($_GET['pid'] ?? 0);
-if ($payment_id <= 0) die("Thiếu payment_id.");
+vincine_require_customer();
+$customer_id = vincine_customer_id();
 
-/* Lấy bill */
+/* Lấy bill của chính khách hàng đang đăng nhập */
 $sql = "
-    SELECT p.*, c.fullname 
+    SELECT p.*, c.fullname
     FROM payments p
     LEFT JOIN customers c ON c.customer_id = p.customer_id
-    WHERE p.payment_id = ?
+    WHERE p.payment_id = ? AND p.customer_id = ?
 ";
 
 $stmt = $conn->prepare($sql);
 
 if (!$stmt) {
-    die("SQL ERROR: " . $conn->error . "<br>SQL:<br>" . $sql);
+    error_log('[vincine] booking_pending prepare failed: ' . $conn->error);
+    http_response_code(500);
+    exit('Hệ thống đang bận. Vui lòng thử lại sau.');
 }
 
-$stmt->bind_param("i", $payment_id);
+$stmt->bind_param('ii', $payment_id, $customer_id);
 $stmt->execute();
 $pay = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-if (!$pay) die("Không tìm thấy hóa đơn.");
+if (!$pay) {
+    http_response_code(404);
+    exit('Không tìm thấy hóa đơn.');
+}
 ?>
 <!doctype html>
 <html lang="vi">

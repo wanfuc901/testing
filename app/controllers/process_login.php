@@ -1,15 +1,31 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-require_once __DIR__ . "/../config/config.php";
+/**
+ * Xử lý đăng nhập cho hai nhóm tài khoản:
+ *   - users     : admin / staff (nội bộ)
+ *   - customers : khách hàng
+ */
 
-$email    = trim($_POST['email'] ?? '');
-$password = trim($_POST['password'] ?? '');
+declare(strict_types=1);
+
+require_once __DIR__ . '/../include/auth.php';
+
+/** Thông báo chung cho mọi lỗi thông tin đăng nhập: tránh dò email tồn tại. */
+const LOGIN_GENERIC_ERROR = 'Email hoặc mật khẩu không đúng.';
+
+$email    = trim((string)($_POST['email'] ?? ''));
+$password = (string)($_POST['password'] ?? '');
 
 $status   = 'error';
 $msgTitle = '';
 $msgText  = '';
 $redirect = 'index.php?p=login';
 
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    $msgTitle = 'Phương thức không hợp lệ';
+    $msgText  = 'Vui lòng đăng nhập từ biểu mẫu.';
+    goto output;
+}
 
 /* ====================================================
    1) KIỂM TRA INPUT
@@ -26,10 +42,8 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     goto output;
 }
 
-
 /* ====================================================
-   2) ĐĂNG NHẬP USER (ADMIN / NHÂN VIÊN)
-   ƯU TIÊN KIỂM TRA TRƯỚC
+   2) TÀI KHOẢN NỘI BỘ (ADMIN / STAFF) — ưu tiên kiểm tra
 ==================================================== */
 $stmt = $conn->prepare("
     SELECT user_id, name, email, password, role
@@ -37,41 +51,51 @@ $stmt = $conn->prepare("
     WHERE email = ?
     LIMIT 1
 ");
-$stmt->bind_param("s", $email);
+if (!$stmt) {
+    error_log('[vincine] process_login users prepare failed: ' . $conn->error);
+    http_response_code(500);
+    $msgTitle = 'Hệ thống đang bận';
+    $msgText  = 'Vui lòng thử lại sau ít phút.';
+    goto output;
+}
+
+$stmt->bind_param('s', $email);
 $stmt->execute();
-$rsUser = $stmt->get_result();
+$staffAccount = $stmt->get_result()->fetch_assoc();
+$stmt->close();
 
-if ($rsUser->num_rows > 0) {
+if ($staffAccount) {
 
-    $u = $rsUser->fetch_assoc();
-
-    if (!password_verify($password, $u['password'])) {
-        $msgTitle = 'Sai mật khẩu';
-        $msgText  = 'Vui lòng thử lại.';
+    if (!password_verify($password, (string)$staffAccount['password'])) {
+        $msgTitle = 'Đăng nhập thất bại';
+        $msgText  = LOGIN_GENERIC_ERROR;
         goto output;
     }
 
-    // LOGIN USER OK
-    $_SESSION['user_id']     = $u['user_id'];
-    $_SESSION['name']        = $u['name'];
-    $_SESSION['email']       = $u['email'];
-    $_SESSION['role']        = $u['role'];
+    $role = in_array($staffAccount['role'], [VINCINE_ROLE_ADMIN, VINCINE_ROLE_STAFF], true)
+        ? (string)$staffAccount['role']
+        : VINCINE_ROLE_STAFF;
+
+    vincine_start_authenticated_session();
+
+    $_SESSION['user_id']     = (int)$staffAccount['user_id'];
+    $_SESSION['name']        = (string)$staffAccount['name'];
+    $_SESSION['email']       = (string)$staffAccount['email'];
+    $_SESSION['role']        = $role;
     $_SESSION['last_active'] = time();
 
     $status   = 'success';
     $msgTitle = 'Đăng nhập thành công';
-    $msgText  = "Xin chào, " . htmlspecialchars($u['name']) . "!";
-
-    $redirect = ($u['role'] === 'admin')
-        ? "index.php?p=admin_dashboard"
-        : "index.php?p=home";
+    $msgText  = 'Xin chào, ' . $staffAccount['name'] . '!';
+    $redirect = ($role === VINCINE_ROLE_ADMIN)
+        ? 'index.php?p=admin_dashboard'
+        : 'index.php?p=home';
 
     goto output;
 }
 
-
 /* ====================================================
-   3) ĐĂNG NHẬP CUSTOMER (KHÁCH HÀNG)
+   3) TÀI KHOẢN KHÁCH HÀNG
 ==================================================== */
 $stmt = $conn->prepare("
     SELECT customer_id, fullname, email, password
@@ -79,60 +103,57 @@ $stmt = $conn->prepare("
     WHERE email = ?
     LIMIT 1
 ");
-$stmt->bind_param("s", $email);
+if (!$stmt) {
+    error_log('[vincine] process_login customers prepare failed: ' . $conn->error);
+    http_response_code(500);
+    $msgTitle = 'Hệ thống đang bận';
+    $msgText  = 'Vui lòng thử lại sau ít phút.';
+    goto output;
+}
+
+$stmt->bind_param('s', $email);
 $stmt->execute();
-$rsCus = $stmt->get_result();
+$customer = $stmt->get_result()->fetch_assoc();
+$stmt->close();
 
-if ($rsCus->num_rows === 0) {
-    $msgTitle = 'Email không tồn tại';
-    $msgText  = 'Không tìm thấy tài khoản.';
+if (!$customer) {
+    $msgTitle = 'Đăng nhập thất bại';
+    $msgText  = LOGIN_GENERIC_ERROR;
     goto output;
 }
 
-$c = $rsCus->fetch_assoc();
-
-
-/* ==========================================
-   4) TK GOOGLE → PASSWORD RỖNG
-========================================== */
-if ($c['password'] === '' || $c['password'] === null) {
-    $msgTitle = "Tài khoản Google";
-    $msgText  = "Tài khoản này đăng ký bằng Google. 
-Vui lòng đăng nhập bằng Google thay vì mật khẩu.";
+/* Tài khoản đăng ký qua Google không có mật khẩu cục bộ. */
+if ((string)$customer['password'] === '') {
+    $msgTitle = 'Tài khoản Google';
+    $msgText  = 'Tài khoản này đăng ký bằng Google. Vui lòng dùng nút "Đăng nhập với Google".';
     goto output;
 }
 
-
-/* ==========================================
-   5) KIỂM TRA PASSWORD CUSTOMER
-========================================== */
-if (!password_verify($password, $c['password'])) {
-    $msgTitle = 'Sai mật khẩu';
-    $msgText  = 'Vui lòng thử lại.';
+if (!password_verify($password, (string)$customer['password'])) {
+    $msgTitle = 'Đăng nhập thất bại';
+    $msgText  = LOGIN_GENERIC_ERROR;
     goto output;
 }
 
+vincine_start_authenticated_session();
 
-/* ==========================================
-   6) LOGIN CUSTOMER OK
-========================================== */
-$_SESSION['customer_id'] = $c['customer_id'];
-$_SESSION['fullname']    = $c['fullname'];
-$_SESSION['email']       = $c['email'];
-$_SESSION['role']        = "customer";
+$_SESSION['customer_id'] = (int)$customer['customer_id'];
+$_SESSION['fullname']    = (string)$customer['fullname'];
+$_SESSION['email']       = (string)$customer['email'];
+$_SESSION['role']        = VINCINE_ROLE_CUSTOMER;
 $_SESSION['last_active'] = time();
 
 $status   = 'success';
 $msgTitle = 'Đăng nhập thành công';
-$msgText  = 'Chào mừng trở lại, ' . htmlspecialchars($c['fullname']) . '!';
-$redirect = "index.php?p=home";
-
+$msgText  = 'Chào mừng trở lại, ' . $customer['fullname'] . '!';
+$redirect = 'index.php?p=home';
 
 /* ====================================================
-   7) XUẤT HTML HIỆU ỨNG
+   4) XUẤT HTML HIỆU ỨNG
 ==================================================== */
 output:
 ?>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -254,8 +275,8 @@ p {
       <path class="errormark__cross" d="M16 16 36 36 M36 16 16 36"/>
     </svg>
 
-    <h2 id="msgTitle"><?= $msgTitle ?></h2>
-    <p id="msgText"><?= $msgText ?></p>
+    <h2 id="msgTitle"><?= htmlspecialchars($msgTitle, ENT_QUOTES, 'UTF-8') ?></h2>
+    <p id="msgText"><?= htmlspecialchars($msgText, ENT_QUOTES, 'UTF-8') ?></p>
   </div>
 
 <script>
@@ -264,7 +285,7 @@ setTimeout(() => {
 
   <?php if ($status === 'success'): ?>
     document.getElementById('checkmark').style.display = 'block';
-    setTimeout(() => { window.location.href = "<?= $redirect ?>"; }, 2500);
+    setTimeout(() => { window.location.href = "<?= htmlspecialchars($redirect, ENT_QUOTES, 'UTF-8') ?>"; }, 2500);
   <?php else: ?>
     document.getElementById('errormark').style.display = 'block';
     setTimeout(() => { window.location.href = "index.php?p=login"; }, 2500);
