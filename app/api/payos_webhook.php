@@ -29,6 +29,21 @@ function payos_reply(bool $success, string $message, int $httpCode = 200): void
     exit;
 }
 
+/** Cập nhật ghi chú của một dòng nhật ký đã ghi. */
+function payos_note(mysqli $conn, string $reference, string $note, ?int $paymentId = null): void
+{
+    $stmt = $conn->prepare(
+        'UPDATE payos_webhook_log SET note = ?, payment_id = COALESCE(?, payment_id) WHERE reference = ?'
+    );
+    if (!$stmt) {
+        return;
+    }
+
+    $stmt->bind_param('sis', $note, $paymentId, $reference);
+    $stmt->execute();
+    $stmt->close();
+}
+
 /** Ghi nhật ký webhook. Trả về false nếu reference đã được ghi trước đó. */
 function payos_log_webhook(
     mysqli $conn,
@@ -131,6 +146,7 @@ $stmt->close();
 
 if (!$payment) {
     error_log('[vincine] payos_webhook: không tìm thấy đơn với orderCode ' . $orderCode);
+    payos_note($conn, $reference, 'Không tìm thấy đơn hàng');
     // Vẫn trả 200: đơn không tồn tại thì PayOS gửi lại cũng vô ích.
     payos_reply(true, 'Không tìm thấy đơn hàng');
 }
@@ -148,11 +164,13 @@ if ($amount !== (int)round((float)$payment['amount'])) {
         $amount,
         $payment['amount']
     ));
+    payos_note($conn, $reference, sprintf('Lệch tiền: PayOS %d / DB %s', $amount, $payment['amount']), $paymentId);
     payos_reply(true, 'Số tiền không khớp, đã ghi nhận để đối soát thủ công');
 }
 
 /* Chỉ giao dịch thành công mới ghi nhận. */
 if ($code !== '' && $code !== '00') {
+    payos_note($conn, $reference, 'Giao dịch báo mã ' . $code, $paymentId);
     payos_reply(true, 'Giao dịch không thành công, bỏ qua');
 }
 

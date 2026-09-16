@@ -1,5 +1,9 @@
 <?php
-$loaderClass = (isset($role) && $role === 'admin') ? 'vc-loader admin' : 'vc-loader';
+/* index.php không còn biến $role; lấy vai trò qua helper dùng chung. */
+require_once __DIR__ . '/../../app/include/auth.php';
+
+$isAdminLoader = vincine_is_admin();
+$loaderClass   = $isAdminLoader ? 'vc-loader admin' : 'vc-loader';
 ?>
 <link rel="stylesheet" href="public/assets/css/style.css">
 
@@ -11,7 +15,7 @@ $loaderClass = (isset($role) && $role === 'admin') ? 'vc-loader admin' : 'vc-loa
     </div>
     <div class="vc-reel-strip"></div>
   </div>
-  <div class="vc-text"><?= ($role === 'admin' ? 'VinCine Admin' : 'VinCine Studios') ?></div>
+  <div class="vc-text"><?= $isAdminLoader ? 'VinCine Admin' : 'VinCine Studios' ?></div>
 </div>
 
 <script>

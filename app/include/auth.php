@@ -199,7 +199,12 @@ function vincine_verify_csrf(?bool $asJson = null): void
     error_log('[vincine] CSRF token không hợp lệ: ' . ($_SERVER['REQUEST_URI'] ?? '?'));
 
     $asJson = $asJson ?? vincine_wants_json();
-    http_response_code(419);
+
+    /*
+     * Dùng 403 chứ không dùng 419: 419 là quy ước riêng của Laravel, không có
+     * trong chuẩn HTTP, và Apache biến nó thành 500 Internal Server Error.
+     */
+    http_response_code(403);
 
     if ($asJson) {
         header('Content-Type: application/json; charset=utf-8');
