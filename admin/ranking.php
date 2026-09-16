@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../app/include/require_admin.php';
 require_once __DIR__ . '/../app/config/config.php';
 include __DIR__ . '/../app/views/layouts/admin_menu.php';
 
@@ -8,8 +9,17 @@ $period = $_GET['period'] ?? 'all';
 
 function q($conn, $sql) {
   $rs = $conn->query($sql);
-  if ($rs === false) die("SQL ERROR: " . $conn->error);
+  if ($rs === false) {
+    error_log('[vincine] ranking query failed: ' . $conn->error);
+    http_response_code(500);
+    exit('Không tải được bảng xếp hạng.');
+  }
   return $rs;
+}
+
+/** Escape dữ liệu từ DB trước khi nhúng vào HTML. */
+function e($value) {
+  return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
 /* ==== Xây dựng điều kiện thời gian ==== */
@@ -99,8 +109,8 @@ case 'revenue':
     $class = ($i==1?'rev-1':($i==2?'rev-2':($i==3?'rev-3':'rev-normal')));
     echo "<tr>
             <td>{$medal} {$i}</td>
-            <td><img src='{$poster}' class='poster'></td>
-            <td>{$r['title']}</td>
+            <td><img src='" . e($poster) . "' class='poster' alt=''></td>
+            <td>" . e($r['title']) . "</td>
             <td>{$r['total_tickets']}</td>
             <td><strong class='{$class}'>".number_format($r['total_revenue'])."₫</strong></td>
           </tr>";
@@ -131,8 +141,8 @@ case 'rating':
     $poster = $r['poster_url'] ? "app/views/movies/{$r['poster_url']}" : "public/assets/img/no_poster.png";
     echo "<tr>
             <td>{$medal} {$i}</td>
-            <td><img src='{$poster}' class='poster'></td>
-            <td>{$r['title']}</td>
+            <td><img src='" . e($poster) . "' class='poster' alt=''></td>
+            <td>" . e($r['title']) . "</td>
             <td><i class='bx bxs-star' style='color:var(--gold)'></i> {$r['avg_rating']}</td>
             <td>{$r['review_count']}</td>
           </tr>";
@@ -144,13 +154,13 @@ case 'rating':
 /* ==== 3️⃣ NGƯỜI DÙNG CHI TIÊU ==== */
 case 'spender':
   $sql = "
-    SELECT u.user_id,u.name,u.email,
+    SELECT c.customer_id, c.fullname AS name, c.email,
            SUM(t.price) AS total_spent, COUNT(t.ticket_id) AS tickets
-    FROM users u
-    JOIN tickets t ON t.user_id = u.user_id
+    FROM customers c
+    JOIN tickets t ON t.customer_id = c.customer_id
     JOIN showtimes s ON s.showtime_id = t.showtime_id
     WHERE t.paid = 1 $timeFilter
-    GROUP BY u.user_id
+    GROUP BY c.customer_id
     ORDER BY total_spent DESC
     LIMIT 10";
   $rs = q($conn, $sql);
@@ -163,8 +173,8 @@ case 'spender':
     $class = ($i==1?'rev-1':($i==2?'rev-2':($i==3?'rev-3':'rev-normal')));
     echo "<tr>
             <td>{$medal} {$i}</td>
-            <td>{$r['name']}</td>
-            <td>{$r['email']}</td>
+            <td>" . e($r['name']) . "</td>
+            <td>" . e($r['email']) . "</td>
             <td>{$r['tickets']}</td>
             <td><strong class='{$class}'>".number_format($r['total_spent'])."₫</strong></td>
           </tr>";

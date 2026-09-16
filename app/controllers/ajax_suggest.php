@@ -21,7 +21,7 @@ while ($row = $res->fetch_assoc()) {
   $out[] = [
     'id'     => (int)$row['movie_id'],
     'title'  => $row['title'],
-    'poster' => "/VincentCinemas/app/views/banners/" . $row['poster_url']
+    'poster' => 'app/views/banners/' . $row['poster_url'],
   ];
 }
 echo json_encode($out);

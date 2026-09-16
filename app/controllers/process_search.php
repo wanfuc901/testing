@@ -1,6 +1,6 @@
 <?php
-include __DIR__ . "/../config/config.php";
-include __DIR__ . "/../models/Movie.php";
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../models/movie.php';
 
 $q = trim($_GET['q'] ?? '');
 if ($q === '') {

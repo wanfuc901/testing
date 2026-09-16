@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../app/include/require_admin.php';
 require_once __DIR__ . '/../app/config/config.php';
 require_once __DIR__ . '/../app/include/check_log.php';
 include __DIR__ . '/../app/views/layouts/admin_menu.php';
@@ -51,6 +52,7 @@ $rs = $conn->query($sql);
     </div>
 
     <form action="app/controllers/admin/tickets_controller.php" method="post" id="multiForm">
+<?= vincine_csrf_input() ?>
       <table class="admin-table">
         <thead>
           <tr>

@@ -1,0 +1,15 @@
+# ===== Vincent Cinemas — cấu hình Apache =====
+
+# Không liệt kê thư mục
+Options -Indexes
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Chặn truy cập file ẩn và file cấu hình
+<FilesMatch "^\.|composer\.(json|lock)$|\.(sql|log|bat|md)$">
+    Require all denied
+</FilesMatch>

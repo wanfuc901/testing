@@ -1,10 +1,24 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-require __DIR__ . '/../config/config.php';
+/**
+ * Ghi lựa chọn combo vào phiên đặt vé tạm.
+ */
+
+require_once __DIR__ . '/../include/auth.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    exit('Phương thức không hợp lệ.');
+}
+
+vincine_verify_csrf(false);
+vincine_require_customer();
 
 // ===== LẤY SESSION TẠM ĐẶT VÉ =====
 $temp = $_SESSION['temp_booking'] ?? null;
-if (!$temp) die("Phiên đặt vé không hợp lệ.");
+if (!$temp) {
+    http_response_code(400);
+    exit('Phiên đặt vé không hợp lệ.');
+}
 
 // ===== DỮ LIỆU COMBO NGƯỜI DÙNG CHỌN =====
 $combo_ids  = $_POST['combo_id'] ?? [];

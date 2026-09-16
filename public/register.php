@@ -18,6 +18,7 @@ if (isset($_SESSION['user_id'])) {
     <h2>Đăng ký</h2>
 
     <form class="login-form" method="post" action="app/controllers/process_register.php">
+<?= vincine_csrf_input() ?>
       <input type="text" name="name" class="input" placeholder="Họ và tên" required>
       <input type="email" name="email" class="input" placeholder="Email" required>
       <input type="tel" name="phone" class="input" placeholder="Số điện thoại" required>

@@ -1,33 +1,51 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-require __DIR__ . "/../config/config.php";
+/**
+ * Xác minh mã OTP đặt lại mật khẩu.
+ * Trả về text thuần cho frontend: no_session | expired | locked | success | error
+ */
 
-header('Content-Type: text/plain; charset=utf-8'); // đảm bảo trả về text thuần
+declare(strict_types=1);
 
-// --- Lấy OTP người dùng nhập ---
-$otp = trim($_POST['otp'] ?? '');
+require_once __DIR__ . '/../include/auth.php';
 
-// --- Kiểm tra dữ liệu và session ---
+header('Content-Type: text/plain; charset=utf-8');
+
+vincine_verify_csrf(true);
+
+/** Số lần nhập sai tối đa trước khi phải xin mã mới. */
+const OTP_MAX_ATTEMPTS = 5;
+
+$otp = trim((string)($_POST['otp'] ?? ''));
+
 if (!isset($_SESSION['reset_email'], $_SESSION['reset_otp'], $_SESSION['otp_expire'])) {
     echo 'no_session';
     exit;
 }
 
-if (time() > $_SESSION['otp_expire']) {
+if (time() > (int)$_SESSION['otp_expire']) {
+    unset($_SESSION['reset_otp'], $_SESSION['otp_expire'], $_SESSION['otp_attempts']);
     echo 'expired';
     exit;
 }
 
-// --- So sánh OTP ---
-if ($otp === (string)$_SESSION['reset_otp']) {
-    // Thành công → cho phép đổi mật khẩu
+$attempts = (int)($_SESSION['otp_attempts'] ?? 0);
+if ($attempts >= OTP_MAX_ATTEMPTS) {
+    // Vô hiệu hóa mã hiện tại để không thể dò tiếp.
+    unset($_SESSION['reset_otp'], $_SESSION['otp_expire'], $_SESSION['otp_attempts']);
+    echo 'locked';
+    exit;
+}
+
+// So sánh theo thời gian hằng định, tránh rò rỉ qua thời gian phản hồi.
+if (hash_equals((string)$_SESSION['reset_otp'], $otp)) {
     $_SESSION['otp_verified'] = true;
 
-    // Không xóa reset_email (cần để cập nhật mật khẩu)
-    unset($_SESSION['reset_otp'], $_SESSION['otp_expire']);
+    // Giữ reset_email và reset_account để bước đổi mật khẩu dùng tiếp.
+    unset($_SESSION['reset_otp'], $_SESSION['otp_expire'], $_SESSION['otp_attempts']);
 
     echo 'success';
-} else {
-    echo 'error';
+    exit;
 }
-?>
+
+$_SESSION['otp_attempts'] = $attempts + 1;
+echo 'error';

@@ -1,12 +1,10 @@
 <?php
-if (session_status()===PHP_SESSION_NONE) session_start();
-require __DIR__ . "/../../config/config.php";
-require __DIR__ . "/../../models/ShowtimeModel.php";
+require_once __DIR__ . '/../../include/auth.php';
+require_once __DIR__ . '/../../models/ShowtimeModel.php';
 
-header("Content-Type: application/json; charset=utf-8");
-if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? 'customer')!=='admin') {
-  http_response_code(403); echo json_encode(["error"=>"forbidden"]); exit;
-}
+header('Content-Type: application/json; charset=utf-8');
+vincine_require_admin(true);
+vincine_verify_csrf(true);
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
@@ -122,11 +120,22 @@ unset($s);
     }
     j(["ok"=>1,"created"=>$sum,"skipped"=>$skip]);
   }
-  case 'activate_movie':
-  $id = intval($_POST['movie_id']);
-  $conn->query("UPDATE movies SET status='active' WHERE movie_id=$id");
-  echo json_encode(['ok'=>true]);
-  break;
+  case 'activate_movie': {
+    $id = (int)($_POST['movie_id'] ?? 0);
+    if ($id <= 0) { j(['error' => 'movie_id không hợp lệ']); }
+
+    $stmt = $conn->prepare("UPDATE movies SET status = 'active' WHERE movie_id = ?");
+    if (!$stmt) {
+      error_log('[vincine] activate_movie prepare failed: ' . $conn->error);
+      j(['error' => 'Không cập nhật được phim']);
+    }
+
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $stmt->close();
+
+    j(['ok' => true]);
+  }
 
   case 'clone_week':
   $from = $_POST['from'] ?? '';

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../include/require_admin.php';
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
 
@@ -9,26 +10,54 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
-$from = $_GET['from'] ?? date('Y-m-01');
-$to   = $_GET['to'] ?? date('Y-m-d');
+/**
+ * Chuẩn hóa tham số ngày về đúng định dạng Y-m-d.
+ * Chặn mọi chuỗi lạ trước khi đưa vào truy vấn.
+ */
+function normalize_report_date(?string $value, string $fallback): string
+{
+    $value = trim((string)$value);
+    $date  = DateTime::createFromFormat('Y-m-d', $value);
+
+    return ($date && $date->format('Y-m-d') === $value) ? $value : $fallback;
+}
+
+$from = normalize_report_date($_GET['from'] ?? null, date('Y-m-01'));
+$to   = normalize_report_date($_GET['to'] ?? null, date('Y-m-d'));
+
+if ($from > $to) {
+    [$from, $to] = [$to, $from];
+}
 
 /* === Lấy dữ liệu === */
 $sql = "
   SELECT DATE_FORMAT(COALESCE(p.paid_at, t.booked_at), '%Y-%m') AS Thang,
          SUM(COALESCE(p.amount, t.price)) AS DoanhThu
   FROM tickets t
-  LEFT JOIN payments p 
-         ON p.payment_id = t.payment_id 
-        AND p.status='success'
-  WHERE (t.status='confirmed' OR t.paid=1)
-    AND DATE(COALESCE(p.paid_at, t.booked_at)) BETWEEN '$from' AND '$to'
+  LEFT JOIN payments p
+         ON p.payment_id = t.payment_id
+        AND p.status = 'success'
+  WHERE (t.status = 'confirmed' OR t.paid = 1)
+    AND DATE(COALESCE(p.paid_at, t.booked_at)) BETWEEN ? AND ?
   GROUP BY DATE_FORMAT(COALESCE(p.paid_at, t.booked_at), '%Y-%m')
   ORDER BY Thang ASC
 ";
 
-$data = $conn->query($sql);
-if(!$data){
-    die("SQL ERROR: " . $conn->error . "<br><pre>$sql</pre>");
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    error_log('[vincine] export_revenue prepare failed: ' . $conn->error);
+    http_response_code(500);
+    exit('Không tạo được báo cáo. Vui lòng thử lại sau.');
+}
+
+$stmt->bind_param('ss', $from, $to);
+$stmt->execute();
+$data = $stmt->get_result();
+
+if ($data === false) {
+    error_log('[vincine] export_revenue query failed: ' . $conn->error);
+    http_response_code(500);
+    exit('Không tạo được báo cáo. Vui lòng thử lại sau.');
 }
 
 

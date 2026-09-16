@@ -63,6 +63,7 @@ $displayName = $_SESSION['fullname']
         </a>
 
         <form method="post" action="index.php?p=logout" style="display:inline;">
+<?= vincine_csrf_input() ?>
           <button type="submit" class="btn ghost nav-btn">
             <i class='bx bxs-log-out-circle'></i> Đăng xuất
           </button>
@@ -109,6 +110,7 @@ $displayName = $_SESSION['fullname']
       </a>
 
       <form method="post" action="index.php?p=logout">
+<?= vincine_csrf_input() ?>
         <button class="btn ghost" style="width:100%; text-align:left;">
           <i class='bx bx-exit'></i> Đăng xuất
         </button>

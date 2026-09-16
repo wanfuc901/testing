@@ -1,26 +1,18 @@
 <?php
-require_once __DIR__ . '../../config/config.php';
-$role = $_GET['role'] ?? 'all';
-$page = max(1, (int)($_GET['page'] ?? 1));
-$limit = 10;
-$offset = ($page - 1) * $limit;
-$where = ($role==='all') ? '' : "WHERE a.role='$role'";
+/**
+ * ĐÃ GỠ BỎ — endpoint nhật ký hoạt động.
+ *
+ * Lý do gỡ:
+ *   - Ghép thẳng $_GET['role'] vào câu SQL (lỗ hổng SQL injection).
+ *   - Không kiểm tra quyền, ai cũng gọi được.
+ *   - Truy vấn bảng `activity_logs` không tồn tại trong schema.
+ *   - Chỉ được gọi bởi app/include/admin_activity_widget.php, cũng là code chết.
+ *
+ * Có thể xóa hẳn: git rm app/api/get_activity.php
+ */
 
-$sql = "
-SELECT a.*, u.name
-FROM activity_logs a
-LEFT JOIN users u ON u.user_id=a.user_id
-$where
-ORDER BY a.id DESC
-LIMIT $limit OFFSET $offset
-";
-$rs = $conn->query($sql);
+declare(strict_types=1);
 
-while($r=$rs->fetch_assoc()){
-  echo "<div class='activity-item'>";
-  echo "<div class='info'><b>".htmlspecialchars($r['name'] ?: 'Ẩn danh')."</b> ";
-  echo "<span class='role'>(".$r['role'].")</span> ";
-  echo "<span class='action'>· ".htmlspecialchars($r['action'])."</span></div>";
-  echo "<div class='meta'><small>".date('H:i:s d/m/Y',strtotime($r['created_at']))."</small>";
-  echo "<span class='dots'><span></span><span></span><span></span></span></div></div>";
-}
+http_response_code(410);
+header('Content-Type: text/plain; charset=utf-8');
+echo 'Endpoint đã ngừng hoạt động.';

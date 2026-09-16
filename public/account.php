@@ -1,29 +1,26 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-require __DIR__ . "/../app/config/config.php";
+/**
+ * Trang tài khoản: hồ sơ + lịch sử vé (lịch sử chỉ có với khách hàng).
+ */
 
-/* ============================================================
-   1. KIỂM TRA ĐĂNG NHẬP (CHO PHÉP CUSTOMER + USER + ADMIN)
-============================================================ */
-if (
-    !isset($_SESSION['role']) ||
-    !in_array($_SESSION['role'], ['customer', 'user', 'admin'])
-) {
-    header("Location: index.php?p=login");
+require_once __DIR__ . '/../app/include/auth.php';
+
+if (!vincine_is_logged_in()) {
+    header('Location: index.php?p=login');
     exit;
 }
 
-/* 
-   LẤY ID NGƯỜI DÙNG THEO ROLE
-   - admin/user dùng user_id
-   - customer dùng customer_id
-*/
-$isCustomer = ($_SESSION['role'] === 'customer');
-$customer_id = $isCustomer ? ($_SESSION['customer_id'] ?? 0) : 0;
+/*
+ * Hai bảng tài khoản dùng hai dãy ID độc lập:
+ *   - customers.customer_id cho khách hàng (có lịch sử vé)
+ *   - users.user_id cho admin/staff
+ */
+$isCustomer  = vincine_is_customer();
+$customer_id = vincine_customer_id();
 
-/* Nếu là admin/user → không có customer_id → không hiển thị lịch sử vé */
 if ($isCustomer && $customer_id <= 0) {
-    die("<p style='color:red;text-align:center;margin-top:20px;'>Lỗi: Session không hợp lệ!</p>");
+    header('Location: index.php?p=login');
+    exit;
 }
 
 /* ============================================================
@@ -35,7 +32,7 @@ if ($isCustomer) {
     $stmt->bind_param("i", $customer_id);
 } else {
     // User/Admin
-    $uid = $_SESSION['user_id'];
+    $uid = vincine_user_id();
     $stmt = $conn->prepare("SELECT name, email, created_at FROM users WHERE user_id = ?");
     $stmt->bind_param("i", $uid);
 }
@@ -112,6 +109,7 @@ if ($isCustomer) {
       <?php endif; ?>
 
       <form method="post" action="index.php?p=logout">
+<?= vincine_csrf_input() ?>
         <button class="logout-btn"><i class='bx bx-log-out'></i> Đăng xuất</button>
       </form>
     </div>

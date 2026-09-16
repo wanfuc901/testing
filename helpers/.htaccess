@@ -1,0 +1,2 @@
+# Helper nội bộ: chỉ được include từ PHP, không gọi trực tiếp
+Require all denied

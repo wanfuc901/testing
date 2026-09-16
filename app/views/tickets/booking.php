@@ -1,8 +1,6 @@
 <?php
 include __DIR__ . "/../../config/config.php";
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
 
 if (!isset($_GET['showtime_id']) || !is_numeric($_GET['showtime_id'])) {
     die("Suất chiếu không hợp lệ");

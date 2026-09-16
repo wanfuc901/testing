@@ -1,8 +1,11 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-if (isset($_SESSION['user_id'])) {
-  header("Location: index.php?p=home");
-  exit;
+declare(strict_types=1);
+
+require_once __DIR__ . '/../app/include/auth.php';
+
+if (vincine_is_logged_in()) {
+    header('Location: index.php?p=' . (vincine_is_admin() ? 'admin_dashboard' : 'home'));
+    exit;
 }
 ?>
 
@@ -27,6 +30,7 @@ if (isset($_SESSION['user_id'])) {
     <!-- ========== LOGIN FORM ========== -->
     <div class="vc-form-box login">
       <form method="post" action="index.php?p=pcl" class="vc-auth-form">
+<?= vincine_csrf_input() ?>
         <h1>Đăng nhập</h1>
 
         <div class="vc-input-box">
@@ -49,13 +53,9 @@ if (isset($_SESSION['user_id'])) {
 
         <!-- ========== SOCIAL LOGIN BUTTONS ========== -->
         <div class="vc-social">
-          <a href="app/controllers/oauth_facebook.php" class="facebook">
-            <i class='bx bxl-facebook-circle'></i>
-          </a>
-
           <!-- GOOGLE BUTTON (MỚI) -->
           <div id="g_id_onload"
-               data-client_id="691390725508-qegrhgp1q29s8vmd1tc6otv9jp3oupak.apps.googleusercontent.com"
+               data-client_id="<?= htmlspecialchars(GOOGLE_CLIENT_ID, ENT_QUOTES, 'UTF-8') ?>"
                data-context="signin"
                data-ux_mode="popup"
                data-callback="handleCredentialResponse"
@@ -76,6 +76,7 @@ if (isset($_SESSION['user_id'])) {
     <!-- ========== REGISTER FORM ========== -->
     <div class="vc-form-box register">
       <form method="post" action="app/controllers/process_register.php" class="vc-auth-form">
+<?= vincine_csrf_input() ?>
         <h1>Đăng ký</h1>
 
         <div class="vc-input-box">
@@ -130,12 +131,19 @@ if (isset($_SESSION['user_id'])) {
       form.method = "POST";
       form.action = "app/controllers/oauth_google.php";
 
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = "credential";
-      input.value = response.credential;
+      const fields = {
+          credential: response.credential,
+          _csrf: <?= json_encode(vincine_csrf_token()) ?>
+      };
 
-      form.appendChild(input);
+      for (const [name, value] of Object.entries(fields)) {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = name;
+          input.value = value;
+          form.appendChild(input);
+      }
+
       document.body.appendChild(form);
       form.submit();
   }

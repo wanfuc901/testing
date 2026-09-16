@@ -1,14 +1,74 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-include __DIR__ . "/../app/config/config.php";
+/**
+ * Màn hình xác nhận đặt vé thành công.
+ *
+ * Hai nguồn dữ liệu:
+ *   - ?pid=  : đơn đã thanh toán qua PayOS, đọc lại từ DB (kiểm tra chủ sở hữu)
+ *   - session: luồng thanh toán tại quầy, dữ liệu còn trong $_SESSION
+ */
 
-if (empty($_SESSION['last_booking'])) die("Không có thông tin đặt vé.");
+require_once __DIR__ . '/../app/include/auth.php';
 
-$booking = $_SESSION['last_booking'];
-$showtime_id = intval($booking['showtime_id']);
-$seatLabels  = $booking['seat_labels'] ?? [];
-$total       = $booking['total'];
-$method      = $booking['method'];
+$payment_id = (int)($_GET['pid'] ?? 0);
+
+if ($payment_id > 0) {
+
+    vincine_require_customer();
+    $customer_id = vincine_customer_id();
+
+    $stmt = $conn->prepare("
+        SELECT amount, order_data, method, status
+        FROM payments
+        WHERE payment_id = ? AND customer_id = ?
+    ");
+    if (!$stmt) {
+        error_log('[vincine] booking_success prepare failed: ' . $conn->error);
+        http_response_code(500);
+        exit('Hệ thống đang bận. Vui lòng thử lại sau.');
+    }
+
+    $stmt->bind_param('ii', $payment_id, $customer_id);
+    $stmt->execute();
+    $paid = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$paid) {
+        http_response_code(404);
+        exit('Không tìm thấy hóa đơn.');
+    }
+
+    $order = json_decode((string)$paid['order_data'], true) ?: [];
+    $showtime_id = (int)($order['showtime_id'] ?? 0);
+    $total       = (float)$paid['amount'];
+    $method      = (string)$paid['method'];
+
+    /* Dựng lại nhãn ghế từ DB thay vì tin session. */
+    $seatLabels = [];
+    $stmtSeat = $conn->prepare("SELECT `row_number`, `col_number` FROM seats WHERE seat_id = ?");
+    foreach (($order['seats'] ?? []) as $sid) {
+        $sid = (int)$sid;
+        $stmtSeat->bind_param('i', $sid);
+        $stmtSeat->execute();
+        $row = $stmtSeat->get_result()->fetch_assoc();
+        if ($row) {
+            $seatLabels[] = chr(64 + (int)$row['row_number']) . (int)$row['col_number'];
+        }
+    }
+    $stmtSeat->close();
+
+} else {
+
+    if (empty($_SESSION['last_booking'])) {
+        http_response_code(400);
+        exit('Không có thông tin đặt vé.');
+    }
+
+    $booking     = $_SESSION['last_booking'];
+    $showtime_id = (int)$booking['showtime_id'];
+    $seatLabels  = $booking['seat_labels'] ?? [];
+    $total       = $booking['total'];
+    $method      = $booking['method'];
+}
 
 $stmt = $conn->prepare("
     SELECT m.title, r.name AS room_name, s.start_time, s.end_time
@@ -30,7 +90,7 @@ $qrContent =
 💳 Thanh toán: " . ($method === 'cash' ? 'Tại quầy' : 'Online') . "
 🎟️ Cảm ơn bạn đã đặt vé tại VinCine";
 
-$qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=" . urlencode($qrContent);
+/* Mã QR vẽ tại trình duyệt bằng thư viện cục bộ: nội dung vé không rời khỏi hệ thống. */
 
 ?>
 <!DOCTYPE html>
@@ -65,7 +125,14 @@ $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=" . urle
       </div>
 
       <div class="success-qr">
-        <img src="<?= $qrUrl ?>" alt="QR Code vé">
+        <div id="ticketQr"></div>
+        <script src="assets/vendor/qrcodejs/qrcode.min.js"></script>
+        <script>
+          new QRCode(document.getElementById('ticketQr'), {
+            text: <?= json_encode($qrContent, JSON_UNESCAPED_UNICODE) ?>,
+            width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M
+          });
+        </script>
         <p>Quét mã bằng zalo để xem thông tin vé</p>
       </div>
     </div>

@@ -1,23 +1,16 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+/**
+ * Chi tiết một vé của khách hàng đang đăng nhập.
+ *
+ * Trang chỉ dành cho khách hàng: users.user_id và customers.customer_id là hai
+ * dãy số độc lập, dùng chung một biến $viewer_id sẽ cho nhân sự nội bộ xem
+ * nhầm vé của khách trùng ID. Admin xem vé trong khu vực quản trị.
+ */
 
-require __DIR__ . '/../app/config/config.php';
+require_once __DIR__ . '/../app/include/auth.php';
 
-/* ============================================================
-   1. KIỂM TRA ĐĂNG NHẬP (USER HOẶC CUSTOMER)
-============================================================ */
-if (
-    !isset($_SESSION['role']) ||
-    !in_array($_SESSION['role'], ['admin', 'user', 'customer'])
-) {
-    header("Location: index.php?p=login");
-    exit;
-}
-
-/* Lấy ID người dùng đúng bảng */
-$viewer_id = ($_SESSION['role'] === 'customer')
-    ? ($_SESSION['customer_id'] ?? 0)
-    : ($_SESSION['user_id'] ?? 0);
+vincine_require_customer();
+$viewer_id = vincine_customer_id();
 
 
 /* ============================================================
@@ -65,7 +58,8 @@ $ticket = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 if (!$ticket) {
-    die("<p style='color:red;text-align:center;margin-top:40px;'>❌ Vé không tồn tại hoặc bạn không có quyền xem!</p>");
+    http_response_code(404);
+    exit("<p style='color:red;text-align:center;margin-top:40px;'>❌ Vé không tồn tại hoặc bạn không có quyền xem!</p>");
 }
 
 /* ============================================================

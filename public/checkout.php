@@ -3,9 +3,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 require __DIR__ . "/../app/config/config.php";
 
 /* ===== Hiển thị & ghi log lỗi khi dev ===== */
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 $logDir = __DIR__ . '/../app/storage/logs';
 if (!is_dir($logDir)) @mkdir($logDir, 0777, true);
@@ -145,16 +142,25 @@ if (!empty($seatArr)) {
     <h3><i class="bi bi-credit-card-2-front"></i> Chọn phương thức thanh toán</h3>
 
     <form method="post" action="./app/controllers/checkout_online.php">
+<?= vincine_csrf_input() ?>
       <input type="hidden" name="showtime_id" value="<?= $showtime_id ?>">
       <input type="hidden" name="seats" value="<?= htmlspecialchars($seats, ENT_QUOTES) ?>">
       <input type="hidden" name="total_all" value="<?= htmlspecialchars($totalAll, ENT_QUOTES) ?>">
 
       <div class="payment-methods">
-        <label><input type="radio" name="payment_method" value="momo" required> Ví MoMo</label>
-        <label><input type="radio" name="payment_method" value="zalopay"> ZaloPay</label>
-        <label><input type="radio" name="payment_method" value="vnpay"> VNPAY</label>
-        <label><input type="radio" name="payment_method" value="bank"> Thẻ ngân hàng</label>
-        <label><input type="radio" name="payment_method" value="cash"> Thanh toán tại quầy</label>
+        <!--
+          Bốn lựa chọn cũ (MoMo/ZaloPay/VNPAY/Thẻ) đều đổ về cùng một nhánh
+          chuyển khoản, và cột payments.method là enum('online','offline') nên
+          giá trị khách chọn bị bỏ đi. Giữ đúng hai phương thức có thật.
+        -->
+        <label>
+          <input type="radio" name="payment_method" value="online" required checked>
+          Chuyển khoản qua QR &mdash; vé chốt tự động khi tiền vào
+        </label>
+        <label>
+          <input type="radio" name="payment_method" value="cash">
+          Thanh toán tại quầy
+        </label>
       </div>
 
       <button type="submit" class="btn-confirm">

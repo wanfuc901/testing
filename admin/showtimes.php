@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../app/include/require_admin.php';
 require_once __DIR__ . '/../app/config/config.php';
 include __DIR__ . '/../app/views/layouts/admin_menu.php';
 date_default_timezone_set('Asia/Ho_Chi_Minh');
@@ -54,6 +55,7 @@ while($r = $rooms->fetch_assoc()) $roomList[] = $r;
 
   <!-- Form thêm/sửa suất chiếu -->
   <form class="admin-form create" action="app/controllers/admin/showtimes_controller.php" method="post">
+<?= vincine_csrf_input() ?>
     <input type="hidden" name="action" value="create">
 
     <div class="form-header">
@@ -263,7 +265,10 @@ function attachSlotEvents(){
           const id=f.querySelector('[name="showtime_id"]').value;
           fetch('app/controllers/admin/showtimes_controller.php',{
             method:'POST',
-            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            headers:{
+              'Content-Type':'application/x-www-form-urlencoded',
+              'X-CSRF-Token': <?= json_encode(vincine_csrf_token()) ?>
+            },
             body:`action=delete&showtime_id=${id}`
           }).then(r=>r.text()).then(()=>{
             alert('Đã xóa suất chiếu.');

@@ -37,6 +37,8 @@
   <div class="sidebar-footer">
     <?php
 if (isset($_POST['logout_now'])) {
+    vincine_verify_csrf(false);
+
     session_unset();
     session_destroy();
     header("Location: index.php");
@@ -44,6 +46,7 @@ if (isset($_POST['logout_now'])) {
 }
 ?>
 <form method="post">
+<?= vincine_csrf_input() ?>
   <button type="submit" name="logout_now" class="logout-btn">
     <i class='bx bx-log-out'></i><span>Đăng xuất</span>
   </button>

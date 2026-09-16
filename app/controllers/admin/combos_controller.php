@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../include/require_admin.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/../../config/config.php';
 
@@ -39,13 +40,28 @@ switch ($action) {
     exit;
 
   case 'delete':
-    $conn->query("DELETE FROM combos WHERE combo_id=$id");
-    header("Location: ../../../index.php?p=admin_combos");
-    exit;
-
   case 'toggle':
-    $conn->query("UPDATE combos SET active = 1 - active WHERE combo_id=$id");
-    header("Location: ../../../index.php?p=admin_combos");
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $id <= 0) {
+        http_response_code(400);
+        exit('Yêu cầu không hợp lệ.');
+    }
+
+    $sql = ($action === 'delete')
+        ? 'DELETE FROM combos WHERE combo_id = ?'
+        : 'UPDATE combos SET active = 1 - active WHERE combo_id = ?';
+
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        error_log('[vincine] combos_controller prepare failed: ' . $conn->error);
+        http_response_code(500);
+        exit('Không thực hiện được thao tác.');
+    }
+
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $stmt->close();
+
+    header('Location: ../../../index.php?p=admin_combos');
     exit;
 
   default:

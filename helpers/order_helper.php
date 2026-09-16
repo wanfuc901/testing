@@ -207,3 +207,121 @@ function finalize_payment($payment_id, $confirmed_by = "system") {
         throw $e;
     }
 }
+
+/* ============================
+   GHI NHẬN ĐÃ THANH TOÁN
+============================ */
+
+/**
+ * Đánh dấu đơn hàng đã nhận được tiền và xuất vé.
+ *
+ * Chỉ được gọi sau khi đã xác thực chữ ký webhook PayOS hoặc sau khi tra cứu
+ * trạng thái trực tiếp từ API PayOS. Hàm này idempotent: gọi lại nhiều lần
+ * cho cùng một đơn không tạo thêm vé và không đổi gì thêm.
+ *
+ * @return array{status: string, ticket_ids: int[]} status: paid | already
+ * @throws RuntimeException
+ */
+function vincine_mark_payment_paid(int $payment_id, ?string $reference = null): array
+{
+    global $conn;
+
+    if ($payment_id <= 0) {
+        throw new RuntimeException('payment_id không hợp lệ');
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        /*
+         * Khóa dòng đơn hàng trong suốt giao dịch. Hai webhook đến cùng lúc
+         * thì cái thứ hai phải chờ và sẽ thấy trạng thái đã là 'paid'.
+         */
+        $stmt = $conn->prepare("SELECT payment_id, status FROM payments WHERE payment_id = ? FOR UPDATE");
+        if (!$stmt) {
+            throw new RuntimeException($conn->error);
+        }
+        $stmt->bind_param('i', $payment_id);
+        $stmt->execute();
+        $payment = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if (!$payment) {
+            throw new RuntimeException('Không tìm thấy đơn hàng ' . $payment_id);
+        }
+
+        if (in_array($payment['status'], ['paid', 'success'], true)) {
+            $conn->commit();
+            return ['status' => 'already', 'ticket_ids' => []];
+        }
+
+        $stmt = $conn->prepare("
+            UPDATE payments
+            SET status = 'paid', paid_at = NOW(), payos_reference = ?
+            WHERE payment_id = ?
+        ");
+        if (!$stmt) {
+            throw new RuntimeException($conn->error);
+        }
+        $stmt->bind_param('si', $reference, $payment_id);
+        $stmt->execute();
+        $stmt->close();
+
+        /*
+         * Tiền đã vào tài khoản và được PayOS xác nhận nên vé chốt luôn,
+         * không cần nhân viên đối soát thủ công như luồng chuyển khoản cũ.
+         */
+        $stmt = $conn->prepare("
+            UPDATE tickets
+            SET paid = 1, status = 'confirmed', confirmed_by = 'payos', confirmed_at = NOW()
+            WHERE payment_id = ? AND status <> 'cancelled'
+        ");
+        if (!$stmt) {
+            throw new RuntimeException($conn->error);
+        }
+        $stmt->bind_param('i', $payment_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $ticket_ids = [];
+        $showtime_id = 0;
+        $seat_ids = [];
+
+        $stmt = $conn->prepare("SELECT ticket_id, showtime_id, seat_id FROM tickets WHERE payment_id = ? AND status = 'confirmed'");
+        if ($stmt) {
+            $stmt->bind_param('i', $payment_id);
+            $stmt->execute();
+            $rs = $stmt->get_result();
+            while ($row = $rs->fetch_assoc()) {
+                $ticket_ids[]  = (int)$row['ticket_id'];
+                $seat_ids[]    = (int)$row['seat_id'];
+                $showtime_id   = (int)$row['showtime_id'];
+            }
+            $stmt->close();
+        }
+
+        $conn->commit();
+
+        if ($showtime_id > 0 && $seat_ids) {
+            emit_seat_booked_done($showtime_id, $seat_ids);
+        }
+        emit_payment_update($payment_id, 'paid');
+
+        return ['status' => 'paid', 'ticket_ids' => $ticket_ids];
+
+    } catch (Throwable $e) {
+        $conn->rollback();
+        throw new RuntimeException($e->getMessage(), 0, $e);
+    }
+}
+
+/**
+ * Sinh orderCode cho PayOS: số nguyên dương, tăng dần, duy nhất vĩnh viễn.
+ *
+ * Ghép mốc thời gian với payment_id nên không đụng nhau kể cả khi database
+ * được tạo lại từ đầu (payment_id quay về 1 nhưng thời gian thì không).
+ */
+function vincine_payos_build_order_code(int $payment_id): int
+{
+    return (int)(time() . str_pad((string)($payment_id % 1000), 3, '0', STR_PAD_LEFT));
+}
