@@ -54,6 +54,10 @@ function vincine_routes(): array
         'cbs'        => ['file' => 'public/combo_select.php'],
         'srch'       => ['file' => 'app/controllers/process_search.php'],
 
+        /* ===== PayOS đưa trình duyệt quay về ===== */
+        'payos_return' => ['file' => 'app/controllers/payos_redirect.php'],
+        'payos_cancel' => ['file' => 'app/controllers/payos_redirect.php'],
+
         /* ===== Khu vực quản trị ===== */
         'admin'           => ['file' => 'admin/dashboard.php',            'admin' => true],
         'admin_dashboard' => ['file' => 'admin/dashboard.php',            'admin' => true],

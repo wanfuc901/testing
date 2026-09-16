@@ -148,11 +148,19 @@ if (!empty($seatArr)) {
       <input type="hidden" name="total_all" value="<?= htmlspecialchars($totalAll, ENT_QUOTES) ?>">
 
       <div class="payment-methods">
-        <label><input type="radio" name="payment_method" value="momo" required> Ví MoMo</label>
-        <label><input type="radio" name="payment_method" value="zalopay"> ZaloPay</label>
-        <label><input type="radio" name="payment_method" value="vnpay"> VNPAY</label>
-        <label><input type="radio" name="payment_method" value="bank"> Thẻ ngân hàng</label>
-        <label><input type="radio" name="payment_method" value="cash"> Thanh toán tại quầy</label>
+        <!--
+          Bốn lựa chọn cũ (MoMo/ZaloPay/VNPAY/Thẻ) đều đổ về cùng một nhánh
+          chuyển khoản, và cột payments.method là enum('online','offline') nên
+          giá trị khách chọn bị bỏ đi. Giữ đúng hai phương thức có thật.
+        -->
+        <label>
+          <input type="radio" name="payment_method" value="online" required checked>
+          Chuyển khoản qua QR &mdash; vé chốt tự động khi tiền vào
+        </label>
+        <label>
+          <input type="radio" name="payment_method" value="cash">
+          Thanh toán tại quầy
+        </label>
       </div>
 
       <button type="submit" class="btn-confirm">

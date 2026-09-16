@@ -38,4 +38,20 @@ return [
     /* === Đăng nhập Google (OAuth 2.0 Client ID) === */
     // Lấy tại https://console.cloud.google.com/apis/credentials
     'GOOGLE_CLIENT_ID' => '',
+
+    /* === PayOS ===
+     * Lấy tại https://my.payos.vn -> Kênh thanh toán -> Thông tin xác thực.
+     * CHECKSUM_KEY dài 64 ký tự; ô nhập trên dashboard hiển thị thiếu nên
+     * phải bấm nút copy thay vì đọc bằng mắt.
+     */
+    'PAYOS_CLIENT_ID'    => '',
+    'PAYOS_API_KEY'      => '',
+    'PAYOS_CHECKSUM_KEY' => '',
+
+    // URL công khai PayOS gọi vào khi có tiền, ví dụ:
+    // https://ten-mien-cua-ban/app/api/payos_webhook.php
+    'PAYOS_WEBHOOK_URL'  => '',
+
+    // Gốc site, dùng để dựng returnUrl/cancelUrl gửi cho PayOS
+    'APP_BASE_URL'       => 'http://localhost/VincentCinemas',
 ];

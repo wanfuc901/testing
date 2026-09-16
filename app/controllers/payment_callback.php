@@ -103,23 +103,11 @@ if ($action === 'auto_cancel') {
 }
 
 /* ============================
-   2) KHÁCH BÁO ĐÃ CHUYỂN KHOẢN
+   2) KHÔNG CÒN ĐƯỜNG TỰ XÁC NHẬN
+
+   Trước đây khách bấm "tôi đã chuyển khoản" là hệ thống ghi nhận, không
+   kiểm chứng gì. Giờ việc công nhận đã nhận tiền chỉ xảy ra ở webhook
+   PayOS (đã verify chữ ký HMAC) hoặc khi tra cứu thẳng API PayOS.
 ============================ */
-try {
-    finalize_payment($paymentId, 'user_callback');
-} catch (Exception $e) {
-    error_log('[vincine] finalize_payment failed for ' . $paymentId . ': ' . $e->getMessage());
-    http_response_code(500);
-    exit('Không ghi nhận được thanh toán. Vui lòng liên hệ quầy vé.');
-}
-
-/* Gửi mail xác nhận (send_ticket_email.php đọc biến $payment_id từ scope này) */
-$payment_id = $paymentId;
-try {
-    require __DIR__ . '/send_ticket_email.php';
-} catch (Throwable $e) {
-    error_log('[vincine] send_ticket_email failed for ' . $paymentId . ': ' . $e->getMessage());
-}
-
-header('Location: ../../public/booking_pending.php?pid=' . $paymentId);
-exit;
+http_response_code(400);
+exit('Thao tác không hợp lệ.');

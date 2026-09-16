@@ -166,3 +166,62 @@ Nếu chưa chạy `DTB/migrations/2026-09-17_login_attempts.sql`, tính năng n
 tắt và ghi cảnh báo vào log — đăng nhập vẫn hoạt động bình thường.
 
 Mã OTP đặt lại mật khẩu bị khoá sau 5 lần nhập sai, phải xin mã mới.
+
+---
+
+## 💳 Thanh toán PayOS
+
+Tiền vào tài khoản là vé chốt tự động, không cần nhân viên đối soát thủ công.
+
+### Cấu hình
+
+Thêm vào `app/config/env.php` (lấy ở https://my.payos.vn → Kênh thanh toán → Thông tin xác thực):
+
+```php
+'PAYOS_CLIENT_ID'    => '...',
+'PAYOS_API_KEY'      => '...',
+'PAYOS_CHECKSUM_KEY' => '...',   // 64 ký tự
+'PAYOS_WEBHOOK_URL'  => 'https://ten-mien/app/api/payos_webhook.php',
+'APP_BASE_URL'       => 'https://ten-mien',
+```
+
+> Ô Checksum Key trên dashboard PayOS hiển thị **thiếu ký tự**. Phải bấm nút
+> copy, không đọc bằng mắt. Key ngắn hơn 64 ký tự thì mọi chữ ký đều sai và
+> PayOS trả lỗi `201 - Mã kiểm tra(signature) không hợp lệ`.
+
+Kiểm tra cấu hình và đăng ký webhook:
+
+```bash
+php app/cron/payos_register_webhook.php
+```
+
+Script tự báo nếu khóa sai độ dài hoặc URL không đăng ký được. URL webhook phải
+công khai trên Internet và dùng HTTPS — localhost không dùng được, khi dev hãy
+chạy `ngrok http 80`.
+
+### Luồng
+
+1. `checkout_online.php` tạo link PayOS, lưu `payos_order_code`, `payos_payment_link_id`
+   và chuỗi QR vào bảng `payments`. Tạo link thất bại thì ghế được nhả ngay.
+2. `payment_qr.php` vẽ mã QR bằng thư viện cục bộ và hỏi trạng thái mỗi 3 giây.
+3. Khách chuyển khoản → PayOS gọi `app/api/payos_webhook.php`.
+4. Webhook **verify chữ ký HMAC-SHA256 trước mọi thứ khác**, đối chiếu số tiền
+   với đơn trong DB, rồi mới đánh dấu đã trả và xuất vé.
+
+### Vì sao không có nút "tôi đã chuyển khoản"
+
+Nút cũ đánh dấu đơn đã trả mà không kiểm chứng gì — bấm là được vé. Giờ chỉ hai
+đường dẫn tới trạng thái `paid`:
+
+- webhook PayOS đã verify chữ ký, hoặc
+- ứng dụng chủ động hỏi `GET /v2/payment-requests/{orderCode}` và PayOS trả về
+  `status=PAID` với `amountPaid` đủ số tiền.
+
+Cả hai đều idempotent: `vincine_mark_payment_paid()` khoá dòng đơn hàng bằng
+`SELECT ... FOR UPDATE`, và `payos_webhook_log.reference` có khoá UNIQUE nên một
+giao dịch chỉ được xử lý đúng một lần dù PayOS gửi lại bao nhiêu lần.
+
+### Đối soát
+
+Bảng `payos_webhook_log` lưu mọi gói tin nhận được, kể cả gói có chữ ký sai
+(`verified = 0`). Khi có tranh chấp, tra bảng này trước.
