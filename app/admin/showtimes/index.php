@@ -1,14 +1,16 @@
 <?php
-if (session_status()===PHP_SESSION_NONE) session_start();
-require __DIR__ . "/../../config/config.php";
-if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? 'customer')!=='admin') {
-  header("Location:index.php?p=login"); exit;
-}
+require_once __DIR__ . '/../../include/require_admin.php';
 
 // Lấy danh sách phim
 $movies = $conn->query("SELECT movie_id, title, poster_url, status FROM movies ORDER BY release_date DESC");
+if (!$movies) {
+  error_log('[vincine] showtimes/index movies query failed: ' . $conn->error);
+  http_response_code(500);
+  exit('Không tải được danh sách phim.');
+}
+
 $movieList = [];
-while($m = $movies->fetch_assoc()) $movieList[] = $m;
+while ($m = $movies->fetch_assoc()) $movieList[] = $m;
 
 // Lấy danh sách phòng
 $rooms = $conn->query("SELECT room_id, name FROM rooms ORDER BY room_id");

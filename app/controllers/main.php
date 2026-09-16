@@ -1,169 +1,127 @@
 <?php
-function main() {
+/**
+ * Router chính.
+ *
+ * Bảng tuyến đường là nguồn dữ liệu duy nhất cho cả việc nạp file lẫn việc
+ * xác định trang nào thuộc khu vực quản trị — thay cho kiểm tra tiền tố
+ * chuỗi "admin" vốn dễ bỏ sót khi thêm tuyến mới.
+ */
 
-    $p = $_REQUEST["p"] ?? "home";
+declare(strict_types=1);
 
-    switch ($p) {
+require_once __DIR__ . '/../include/auth.php';
 
-        /* ====== TRANG NGƯỜI DÙNG ====== */
-        case "home":
-            include("app/views/layouts/home.php");
-            break;
-
-        case "abt":
-            include("public/about.php");
-            break;
-
-        /* ====== TRANG KHÔNG LOAD HEADER/FOOTER ====== */
-        case "login":
-            include("public/login.php");
-            break;
-
-        case "rg":
-            include("public/register.php");
-            break;
-
-        case "fp":
-            include("public/forgot_password.php");
-            break;
-
-        /* ====== TRANG KHÁC ====== */
-        case "mv":
-            include("app/views/movies/movie.php");
-            break;
-
-        case "bk":
-            include("app/views/tickets/booking.php");
-            break;
-
-        case "ck":
-            include("public/checkout.php");
-            break;
-
-        case "acc":
-            include("public/account.php");
-            break;
-
-        case "am":
-            include("app/views/layouts/all_movie.php");
-            break;
-
-        case "ao":
-            include("app/views/layouts/all_offers.php");
-            break;
-
-        case "od":
-            include("app/views/offers/offers.php");
-            break;
-
-        case "nowshowing":
-        case "upcoming":
-            include("app/views/layouts/all_movie.php");
-            break;
-
-        /* ====== XỬ LÝ FORM ====== */
-        case "pcl":
-            include("app/controllers/process_login.php");
-            break;
-
-        case "pcr":
-            include("app/controllers/process_register.php");
-            break;
-
-        case "pcb":
-            include("app/controllers/process_booking.php");
-            break;
-
-        case "cbp":
-            include("app/controllers/process_combo.php");
-            break;
-
-        case "cbs":
-            include("public/combo_select.php");
-            break;
-
-        case "srch":
-            include("app/controllers/process_search.php");
-            break;
-
-        /* ===== ADMIN – bắt buộc login admin ===== */
-        case "admin":
-        case "admin_dashboard":
-            checkAdmin();
-            include("admin/dashboard.php");
-            break;
-        case "admin_payments":
-            checkAdmin();
-            include("admin/payments.php");
-            break;
-        case "admin_movies":
-            checkAdmin();
-            include("admin/movies.php");
-            break;
-
-        case "admin_showtimes":
-            checkAdmin();
-            include("admin/showtimes.php");
-            break;
-
-        case "admin_users":
-            checkAdmin();
-            include("admin/users.php");
-            break;
-
-        case "admin_tickets":
-            checkAdmin();
-            include("admin/tickets.php");
-            break;
-
-        case "admin_revenue":
-            checkAdmin();
-            include("admin/revenue.php");
-            break;
-
-        case "admin_sched":
-            checkAdmin();
-            include("app/admin/showtimes/index.php");
-            break;
-
-        case "admin_combos":
-            checkAdmin();
-            include("admin/combos.php");
-            break;
-
-        case "admin_test":
-            checkAdmin();
-            include("admin/test.php");
-            break;
-
-        case "admin_ranking":
-            checkAdmin();
-            include("admin/ranking.php");
-            break;
-        case "admin_genres":
-            include "admin/genres.php";
-            break;
-
-
-        /* ====== ĐĂNG XUẤT ====== */
-        case "logout":
-            session_unset();
-            session_destroy();
-            header("Location: index.php?p=home");
-            exit;
-            break;
-
-        /* ====== MẶC ĐỊNH ====== */
-        default:
-            include("app/views/layouts/home.php");
-            break;
-    }
+if (!defined('VINCINE_ROOT')) {
+    define('VINCINE_ROOT', dirname(__DIR__, 2));
 }
 
-/* ===== Kiểm tra quyền admin ===== */
-function checkAdmin() {
-    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        header("Location: index.php?p=login");
+const VINCINE_DEFAULT_PAGE = 'home';
+
+/**
+ * @return array<string, array{file: string, admin?: bool}>
+ */
+function vincine_routes(): array
+{
+    static $routes = null;
+
+    if ($routes !== null) {
+        return $routes;
+    }
+
+    $routes = [
+        /* ===== Trang người dùng ===== */
+        'home'       => ['file' => 'app/views/layouts/home.php'],
+        'abt'        => ['file' => 'public/about.php'],
+        'mv'         => ['file' => 'app/views/movies/movie.php'],
+        'bk'         => ['file' => 'app/views/tickets/booking.php'],
+        'ck'         => ['file' => 'public/checkout.php'],
+        'acc'        => ['file' => 'public/account.php'],
+        'am'         => ['file' => 'app/views/layouts/all_movie.php'],
+        'ao'         => ['file' => 'app/views/layouts/all_offers.php'],
+        'od'         => ['file' => 'app/views/offers/offers.php'],
+        'nowshowing' => ['file' => 'app/views/layouts/all_movie.php'],
+        'upcoming'   => ['file' => 'app/views/layouts/all_movie.php'],
+
+        /* ===== Trang không có menu/footer ===== */
+        'login'      => ['file' => 'public/login.php'],
+        'rg'         => ['file' => 'public/register.php'],
+        'fp'         => ['file' => 'public/forgot_password.php'],
+
+        /* ===== Xử lý biểu mẫu ===== */
+        'pcl'        => ['file' => 'app/controllers/process_login.php'],
+        'pcr'        => ['file' => 'app/controllers/process_register.php'],
+        'cbp'        => ['file' => 'app/controllers/process_combo.php'],
+        'cbs'        => ['file' => 'public/combo_select.php'],
+        'srch'       => ['file' => 'app/controllers/process_search.php'],
+
+        /* ===== Khu vực quản trị ===== */
+        'admin'           => ['file' => 'admin/dashboard.php',            'admin' => true],
+        'admin_dashboard' => ['file' => 'admin/dashboard.php',            'admin' => true],
+        'admin_payments'  => ['file' => 'admin/payments.php',             'admin' => true],
+        'admin_movies'    => ['file' => 'admin/movies.php',               'admin' => true],
+        'admin_showtimes' => ['file' => 'admin/showtimes.php',            'admin' => true],
+        'admin_users'     => ['file' => 'admin/users.php',                'admin' => true],
+        'admin_tickets'   => ['file' => 'admin/tickets.php',              'admin' => true],
+        'admin_revenue'   => ['file' => 'admin/revenue.php',              'admin' => true],
+        'admin_combos'    => ['file' => 'admin/combos.php',               'admin' => true],
+        'admin_ranking'   => ['file' => 'admin/ranking.php',              'admin' => true],
+        'admin_genres'    => ['file' => 'admin/genres.php',               'admin' => true],
+        'admin_sched'     => ['file' => 'app/admin/showtimes/index.php',  'admin' => true],
+    ];
+
+    return $routes;
+}
+
+/** Trang đang được yêu cầu, đã chuẩn hóa về một tuyến hợp lệ. */
+function vincine_current_page(): string
+{
+    $page = $_GET['p'] ?? VINCINE_DEFAULT_PAGE;
+
+    if (!is_string($page)) {
+        return VINCINE_DEFAULT_PAGE;
+    }
+
+    if ($page === 'logout') {
+        return 'logout';
+    }
+
+    return isset(vincine_routes()[$page]) ? $page : VINCINE_DEFAULT_PAGE;
+}
+
+function vincine_is_admin_page(string $page): bool
+{
+    return (bool)(vincine_routes()[$page]['admin'] ?? false);
+}
+
+/**
+ * Nạp view/controller tương ứng với tuyến.
+ */
+function main(string $page = VINCINE_DEFAULT_PAGE): void
+{
+    /* View và controller được include bên dưới chạy trong scope của hàm này. */
+    global $conn;
+
+    if ($page === 'logout') {
+        session_unset();
+        session_destroy();
+        header('Location: index.php?p=home');
         exit;
     }
+
+    $route = vincine_routes()[$page] ?? vincine_routes()[VINCINE_DEFAULT_PAGE];
+
+    if (!empty($route['admin'])) {
+        vincine_require_admin(false);
+    }
+
+    $target = VINCINE_ROOT . '/' . $route['file'];
+
+    if (!is_file($target)) {
+        error_log('[vincine] route target missing: ' . $route['file']);
+        http_response_code(500);
+        echo '<p style="color:#e50914;text-align:center">Trang này hiện không khả dụng.</p>';
+        return;
+    }
+
+    include $target;
 }

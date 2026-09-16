@@ -1,9 +1,8 @@
 <?php
+require_once __DIR__ . '/../app/include/require_admin.php';
 require_once __DIR__ . '/../app/config/config.php';
 include __DIR__ . '/../app/views/layouts/admin_menu.php';
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
 
 /* ==== RANGE NGÀY ==== */
 $today = date('Y-m-d');

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../app/include/require_admin.php';
 require_once __DIR__ . '/../app/config/config.php';
 require_once __DIR__ . '/../app/include/check_log.php';
 include __DIR__ . '/../app/views/layouts/admin_menu.php';
@@ -20,7 +21,13 @@ $rs = $conn->query("SELECT * FROM combos ORDER BY combo_id DESC");
     <?php if(isset($_GET['create']) || isset($_GET['edit'])):
       $editId = isset($_GET['edit']) ? (int)$_GET['edit'] : 0;
       $edit = ['name'=>'','description'=>'','price'=>'','image'=>'','active'=>1];
-      if ($editId) $edit = $conn->query("SELECT * FROM combos WHERE combo_id=$editId")->fetch_assoc();
+      if ($editId) {
+        $editStmt = $conn->prepare("SELECT * FROM combos WHERE combo_id = ?");
+        $editStmt->bind_param('i', $editId);
+        $editStmt->execute();
+        $edit = $editStmt->get_result()->fetch_assoc();
+        $editStmt->close();
+      }
     ?>
     <form method="post" enctype="multipart/form-data" class="admin-form" action="app/controllers/admin/combos_controller.php">
       <input type="hidden" name="action" value="<?= $editId ? 'update' : 'create' ?>">
@@ -122,13 +129,28 @@ $rs = $conn->query("SELECT * FROM combos ORDER BY combo_id DESC");
           <td><?=$r['active']?'<span class="badge ok">Hiển thị</span>':'<span class="badge err">Ẩn</span>'?></td>
           <td class="td-actions">
             <a href="index.php?p=admin_combos&edit=<?=$r['combo_id']?>" class="btn ghost" title="Sửa"><i class='bx bx-edit'></i></a>
-            <a href="app/controllers/admin/combos_controller.php?action=toggle&combo_id=<?=$r['combo_id']?>" class="btn ghost" title="Ẩn/Hiện"><i class='bx bx-low-vision'></i></a>
-            <a href="app/controllers/admin/combos_controller.php?action=delete&combo_id=<?=$r['combo_id']?>" class="btn danger" title="Xóa" onclick="return confirm('Xóa combo này?')"><i class='bx bx-trash'></i></a>
+            <form method="post" action="app/controllers/admin/combos_controller.php" class="inline-action">
+              <input type="hidden" name="action" value="toggle">
+              <input type="hidden" name="combo_id" value="<?= (int)$r['combo_id'] ?>">
+              <button type="submit" class="btn ghost" title="Ẩn/Hiện"><i class='bx bx-low-vision'></i></button>
+            </form>
+            <form method="post" action="app/controllers/admin/combos_controller.php" class="inline-action"
+                  onsubmit="return confirm('Xóa combo này?')">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="combo_id" value="<?= (int)$r['combo_id'] ?>">
+              <button type="submit" class="btn danger" title="Xóa"><i class='bx bx-trash'></i></button>
+            </form>
           </td>
         </tr>
         <?php endwhile; ?>
       </tbody>
     </table>
     <?php endif; ?>
+
+    <style>
+      .td-actions { display: flex; gap: 6px; align-items: center; }
+      .inline-action { display: inline; margin: 0; }
+      .inline-action button.btn { font: inherit; cursor: pointer; }
+    </style>
   </div>
 </div>

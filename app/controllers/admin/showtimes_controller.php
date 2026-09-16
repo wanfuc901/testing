@@ -1,114 +1,207 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-date_default_timezone_set('Asia/Ho_Chi_Minh');
+require_once __DIR__ . '/../../include/auth.php';
 
-require_once __DIR__ . '/../../config/config.php';
+header('Content-Type: application/json; charset=utf-8');
+vincine_require_admin(true);
 
-$action = $_POST['action'] ?? '';
+$action = $_POST['action'] ?? $_GET['action'] ?? '';
 
-function calc_end_time($conn, $movie_id, $start_time) {
+/* ======================================================
+   HELPERS
+====================================================== */
+function calc_end_time(mysqli $conn, int $movie_id, string $start)
+{
     $q = $conn->prepare("SELECT duration FROM movies WHERE movie_id=?");
     $q->bind_param("i", $movie_id);
     $q->execute();
-    $d = $q->get_result()->fetch_assoc();
-    $duration = intval($d['duration'] ?? 0);
-    if ($duration <= 0) $duration = 90; // fallback mặc định 90 phút
-    return date('Y-m-d H:i:s', strtotime($start_time) + $duration * 60);
+    $row = $q->get_result()->fetch_assoc();
+    $min = intval($row['duration'] ?? 90);
+    return date('Y-m-d H:i:s', strtotime($start) + $min * 60);
 }
 
-function check_overlap($conn, $room_id, $start, $end, $exclude_id = null) {
-    $sql = "SELECT COUNT(*) AS c FROM showtimes 
-            WHERE room_id=? 
-              AND ((start_time BETWEEN ? AND ?) OR (end_time BETWEEN ? AND ?) 
-                   OR (? BETWEEN start_time AND end_time))";
-    if ($exclude_id) $sql .= " AND showtime_id != ?";
+function overlap(mysqli $conn, int $room, string $s, string $e, int $ignore = 0): bool
+{
+    $sql = "SELECT COUNT(*) c FROM showtimes
+            WHERE room_id=?
+              AND NOT (end_time <= ? OR start_time >= ?)";
+    if ($ignore) $sql .= " AND showtime_id!=?";
     $q = $conn->prepare($sql);
-    if ($exclude_id)
-        $q->bind_param("isssssi", $room_id, $start, $end, $start, $end, $start, $exclude_id);
-    else
-        $q->bind_param("isssss", $room_id, $start, $end, $start, $end, $start);
+    if ($ignore) $q->bind_param("issi", $room, $s, $e, $ignore);
+    else $q->bind_param("iss", $room, $s, $e);
     $q->execute();
-    $res = $q->get_result()->fetch_assoc();
-    return $res['c'] > 0;
+    return ($q->get_result()->fetch_assoc()['c'] ?? 0) > 0;
 }
 
-/* ========== CREATE ========== */
-if ($action === 'create') {
-    $movie_id = intval($_POST['movie_id']);
-    $room_id = intval($_POST['room_id']);
-    $start_time = $_POST['start_time'];
-    $end_time = calc_end_time($conn, $movie_id, $start_time);
+/* ======================================================
+   ACTIONS
+====================================================== */
 
-    // ===== kiểm tra giờ mở cửa và thời điểm đã qua =====
-    $hour = intval(date('H', strtotime($start_time))); // dùng H thay cho G
-    $today = date('Y-m-d');
-    $now = time();
-
-    if ($hour < 8) {
-        echo "<script>alert('Không thể thêm phim trước 8:00 sáng (giờ mở cửa)!');history.back();</script>";
-        exit;
+/* ===== Thống kê số suất theo tháng ===== */
+if ($action === 'month_counts') {
+    $y = intval($_GET['year']);
+    $m = intval($_GET['month']);
+    $res = $conn->query("
+        SELECT DATE(start_time) d, COUNT(*) c
+        FROM showtimes
+        WHERE YEAR(start_time)=$y AND MONTH(start_time)=$m
+        GROUP BY d
+    ");
+    $out = [];
+    while ($r = $res->fetch_assoc()) {
+        $out[$r['d']] = (int)$r['c'];
     }
-    if (strtotime($start_time) < $now && date('Y-m-d', strtotime($start_time)) == $today) {
-        echo "<script>alert('Không thể thêm phim vào giờ đã trôi qua!');history.back();</script>";
-        exit;
-    }
-
-    // ===== kiểm tra trùng giờ =====
-    if (check_overlap($conn, $room_id, $start_time, $end_time)) {
-        echo "<script>alert('Trùng giờ chiếu với suất khác trong phòng này!');history.back();</script>";
-        exit;
-    }
-
-    $stmt = $conn->prepare("INSERT INTO showtimes (movie_id, room_id, start_time, end_time) VALUES (?,?,?,?)");
-    $stmt->bind_param("iiss", $movie_id, $room_id, $start_time, $end_time);
-    $stmt->execute();
-    header("Location: ../../../index.php?p=admin_showtimes");
+    echo json_encode(['counts' => $out]);
     exit;
 }
 
-/* ========== UPDATE ========== */
-if ($action === 'update') {
-    $showtime_id = intval($_POST['showtime_id']);
-    $movie_id = intval($_POST['movie_id']);
-    $room_id = intval($_POST['room_id']);
-    $start_time = $_POST['start_time'];
-    $end_time = calc_end_time($conn, $movie_id, $start_time);
+/* ===== Danh sách 1 ngày ===== */
+if ($action === 'day_list') {
+    $date = $_GET['date'];
 
-    // ===== kiểm tra giờ mở cửa và thời điểm đã qua =====
-    $hour = intval(date('G', strtotime($start_time)));
-    $today = date('Y-m-d');
-    $now = time();
+    $shows = [];
+    $q = $conn->prepare("
+        SELECT s.showtime_id, s.room_id, s.start_time, s.end_time, s.status,
+               m.title, m.poster_url
+        FROM showtimes s
+        JOIN movies m ON m.movie_id=s.movie_id
+        WHERE DATE(s.start_time)=?
+        ORDER BY s.start_time
+    ");
+    $q->bind_param("s", $date);
+    $q->execute();
+    $r = $q->get_result();
+    while ($row = $r->fetch_assoc()) $shows[] = $row;
 
-    if ($hour < 8) {
-        echo "<script>alert('Không thể đặt lịch trước 8:00 sáng (giờ mở cửa)!');history.back();</script>";
-        exit;
-    }
-    if (strtotime($start_time) < $now && date('Y-m-d', strtotime($start_time)) == $today) {
-        echo "<script>alert('Không thể sửa suất chiếu về giờ đã trôi qua!');history.back();</script>";
-        exit;
-    }
-
-    // ===== kiểm tra trùng giờ =====
-    if (check_overlap($conn, $room_id, $start_time, $end_time, $showtime_id)) {
-        echo "<script>alert('Trùng giờ chiếu với suất khác trong phòng này!');history.back();</script>";
-        exit;
-    }
-
-    $stmt = $conn->prepare("UPDATE showtimes SET movie_id=?, room_id=?, start_time=?, end_time=? WHERE showtime_id=?");
-    $stmt->bind_param("iissi", $movie_id, $room_id, $start_time, $end_time, $showtime_id);
-    $stmt->execute();
-    header("Location: ../../../index.php?p=admin_showtimes");
+    echo json_encode(['showtimes' => $shows, 'exceptions' => []]);
     exit;
 }
 
-/* ========== DELETE ========== */
-if ($action === 'delete') {
+/* ===== Thêm suất chiếu ===== */
+if ($action === 'add_showtime') {
+    $movie = intval($_POST['movie_id']);
+    $room  = intval($_POST['room_id']);
+    $date  = $_POST['date'];
+    $s     = $date . ' ' . $_POST['start_time'] . ':00';
+    $e     = calc_end_time($conn, $movie, $s);
+
+    if (overlap($conn, $room, $s, $e)) {
+        echo json_encode(['error' => 'overlap']);
+        exit;
+    }
+
+    $q = $conn->prepare("
+        INSERT INTO showtimes(movie_id,room_id,start_time,end_time,status)
+        VALUES(?,?,?,?, 'scheduled')
+    ");
+    $q->bind_param("iiss", $movie, $room, $s, $e);
+    $q->execute();
+
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
+/* ===== Xóa suất ===== */
+if ($action === 'delete_showtime') {
     $id = intval($_POST['showtime_id']);
-    $stmt = $conn->prepare("DELETE FROM showtimes WHERE showtime_id=?");
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    echo "ok";
+    $q = $conn->prepare("DELETE FROM showtimes WHERE showtime_id=?");
+    $q->bind_param("i", $id);
+    $q->execute();
+    echo json_encode(['ok' => true]);
     exit;
 }
-?>
+
+/* ===== Sinh 30 ngày ===== */
+if ($action === 'generate_range') {
+    $from = $_POST['from'] ?? '';
+    $to   = $_POST['to'] ?? '';
+
+    if (!$from || !$to) {
+        echo json_encode(['error'=>'missing_date']);
+        exit;
+    }
+
+
+    $created = 0;
+    $movies = $conn->query("SELECT movie_id FROM movies WHERE status='active' LIMIT 1")
+                   ->fetch_assoc();
+    if (!$movies) {
+        echo json_encode(['created'=>0]);
+        exit;
+    }
+
+    for ($d = strtotime($from); $d <= strtotime($to); $d += 86400) {
+        $date = date('Y-m-d', $d);
+        $s = "$date 10:00:00";
+        $e = calc_end_time($conn, $movies['movie_id'], $s);
+        if (!overlap($conn, 1, $s, $e)) {
+            $q = $conn->prepare("
+                INSERT INTO showtimes(movie_id,room_id,start_time,end_time,status)
+                VALUES(?,?,?,?, 'scheduled')
+            ");
+            $q->bind_param("iiss", $movies['movie_id'], 1, $s, $e);
+            $q->execute();
+            $created++;
+        }
+    }
+    echo json_encode(['created' => $created]);
+    exit;
+}
+
+/* ===== Sao chép tuần ===== */
+if ($action === 'clone_week') {
+    $from = $_POST['from'];
+    $to   = $_POST['to'];
+    $diff = (strtotime($to) - strtotime($from)) / 86400;
+
+    $q = $conn->prepare("
+        SELECT * FROM showtimes
+        WHERE DATE(start_time) BETWEEN ? AND DATE_ADD(?, INTERVAL 6 DAY)
+    ");
+    $q->bind_param("ss", $from, $from);
+    $q->execute();
+    $r = $q->get_result();
+
+    while ($s = $r->fetch_assoc()) {
+        $ns = date('Y-m-d H:i:s', strtotime($s['start_time']) + $diff * 86400);
+        $ne = date('Y-m-d H:i:s', strtotime($s['end_time']) + $diff * 86400);
+        if (!overlap($conn, $s['room_id'], $ns, $ne)) {
+            $ins = $conn->prepare("
+              INSERT INTO showtimes(movie_id,room_id,start_time,end_time,status)
+              VALUES(?,?,?,?,?)
+            ");
+            $ins->bind_param(
+                "iisss",
+                $s['movie_id'],
+                $s['room_id'],
+                $ns,
+                $ne,
+                $s['status']
+            );
+            $ins->execute();
+        }
+    }
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
+/* ===== Reset ngày ===== */
+if ($action === 'reset_day') {
+    $date = $_POST['date'];
+    $q = $conn->prepare("DELETE FROM showtimes WHERE DATE(start_time)=?");
+    $q->bind_param("s", $date);
+    $q->execute();
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
+/* ===== Kích hoạt phim ===== */
+if ($action === 'activate_movie') {
+    $id = intval($_POST['movie_id']);
+    $q = $conn->prepare("UPDATE movies SET status='active' WHERE movie_id=?");
+    $q->bind_param("i", $id);
+    $q->execute();
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
+echo json_encode(['error' => 'invalid_action']);

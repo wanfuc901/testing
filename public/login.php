@@ -1,8 +1,11 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-if (isset($_SESSION['user_id'])) {
-  header("Location: index.php?p=home");
-  exit;
+declare(strict_types=1);
+
+require_once __DIR__ . '/../app/include/auth.php';
+
+if (vincine_is_logged_in()) {
+    header('Location: index.php?p=' . (vincine_is_admin() ? 'admin_dashboard' : 'home'));
+    exit;
 }
 ?>
 
@@ -49,13 +52,9 @@ if (isset($_SESSION['user_id'])) {
 
         <!-- ========== SOCIAL LOGIN BUTTONS ========== -->
         <div class="vc-social">
-          <a href="app/controllers/oauth_facebook.php" class="facebook">
-            <i class='bx bxl-facebook-circle'></i>
-          </a>
-
           <!-- GOOGLE BUTTON (MỚI) -->
           <div id="g_id_onload"
-               data-client_id="691390725508-qegrhgp1q29s8vmd1tc6otv9jp3oupak.apps.googleusercontent.com"
+               data-client_id="<?= htmlspecialchars(GOOGLE_CLIENT_ID, ENT_QUOTES, 'UTF-8') ?>"
                data-context="signin"
                data-ux_mode="popup"
                data-callback="handleCredentialResponse"

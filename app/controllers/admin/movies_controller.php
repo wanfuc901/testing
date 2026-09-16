@@ -1,12 +1,5 @@
 <?php
-require_once __DIR__ . '/../../config/config.php';
-session_start();
-
-// Chặn truy cập nếu không phải admin
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    http_response_code(403);
-    exit('forbidden');
-}
+require_once __DIR__ . '/../../include/require_admin.php';
 
 $act = $_POST['action'] ?? '';
 

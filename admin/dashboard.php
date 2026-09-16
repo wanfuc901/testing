@@ -1,31 +1,42 @@
 <?php
+require_once __DIR__ . '/../app/include/require_admin.php';
 require_once __DIR__ . '/../app/config/config.php';
 require_once __DIR__ . '/../app/include/check_log.php';
 include __DIR__ . '/../app/views/layouts/admin_menu.php';
 
-/* KPIs cơ bản */
+
+function queryValue(mysqli $conn, string $sql, string $field, $default = 0) {
+    $res = $conn->query($sql);
+    if (!$res) return $default;
+    $row = $res->fetch_assoc();
+    return $row[$field] ?? $default;
+}
+
+
+
 $kpis = [
-  'movies'    => $conn->query("SELECT COUNT(*) c FROM movies")->fetch_assoc()['c'] ?? 0,
-  'showtimes' => $conn->query("SELECT COUNT(*) c FROM showtimes")->fetch_assoc()['c'] ?? 0,
-  'tickets'   => $conn->query("SELECT COUNT(*) c FROM tickets")->fetch_assoc()['c'] ?? 0,
-  'users'     => $conn->query("SELECT COUNT(*) c FROM users")->fetch_assoc()['c'] ?? 0,
+  'movies'    => queryValue($conn, "SELECT COUNT(*) c FROM movies", 'c'),
+  'showtimes' => queryValue($conn, "SELECT COUNT(*) c FROM showtimes", 'c'),
+  'tickets'   => queryValue($conn, "SELECT COUNT(*) c FROM tickets", 'c'),
+  'users'     => queryValue($conn, "SELECT COUNT(*) c FROM users", 'c'),
 ];
 
+
 /* Doanh thu hôm nay */
-$today = $conn->query("
+$today = queryValue($conn, "
   SELECT SUM(price) s
   FROM tickets
   WHERE (status='confirmed' OR paid=1)
     AND DATE(booked_at)=CURDATE()
-")->fetch_assoc()['s'] ?? 0;
+", 's', 0);
 
 /* Doanh thu tháng */
-$month = $conn->query("
+$month = queryValue($conn, "
   SELECT SUM(price) s
   FROM tickets
   WHERE (status='confirmed' OR paid=1)
     AND DATE_FORMAT(booked_at,'%Y-%m') = DATE_FORMAT(CURDATE(),'%Y-%m')
-")->fetch_assoc()['s'] ?? 0;
+", 's', 0);
 ?>
 
 
@@ -55,10 +66,62 @@ $month = $conn->query("
     <div class="card-grid" style="margin-top:14px">
       <div class="card" onclick="go('admin_revenue')"><i class="bi bi-cash-stack"></i><div class="k">Doanh thu hôm nay</div><div class="v"><?= number_format($today) ?> đ</div></div>
       <div class="card" onclick="go('admin_revenue')"><i class="bi bi-piggy-bank"></i><div class="k">Doanh thu tháng</div><div class="v"><?= number_format($month) ?> đ</div></div>
-      <div class="card" onclick="go('admin_tickets')"><i class="bi bi-hourglass-split"></i><div class="k">Vé chờ</div><div class="v"><?= $conn->query("SELECT COUNT(*) c FROM tickets WHERE status='pending'")->fetch_assoc()['c'] ?></div></div>
-      <div class="card" onclick="go('admin_tickets')"><i class="bi bi-check-circle"></i><div class="k">Vé đã xác nhận</div><div class="v"><?= $conn->query("SELECT COUNT(*) c FROM tickets WHERE status='confirmed'")->fetch_assoc()['c'] ?></div></div>
+      <div class="card" onclick="go('admin_tickets')"><i class="bi bi-hourglass-split"></i><div class="k">Vé chờ</div><div class="v"><?= queryValue($conn, "SELECT COUNT(*) c FROM tickets WHERE status='pending'", 'c') ?></div></div>
+      <div class="card" onclick="go('admin_tickets')"><i class="bi bi-check-circle"></i><div class="k">Vé đã xác nhận</div><div class="v"><?= queryValue($conn, "SELECT COUNT(*) c FROM tickets WHERE status='confirmed'", 'c') ?></div></div>
     </div>
+    <?php
+$bankRes = $conn->query("
+  SELECT * FROM payment_accounts
+  WHERE is_active = 1
+  LIMIT 1
+");
+$bank = $bankRes ? $bankRes->fetch_assoc() : [];
 
+?>
+
+<div class="admin-title" style="margin-top:28px">
+  <h1><i class="bi bi-bank"></i> Tài khoản nhận tiền</h1>
+
+  <div class="admin-actions">
+    <button class="btn ghost" onclick="toggleBankForm()">
+      <i class="bi bi-pencil-square"></i> Chỉnh sửa
+    </button>
+  </div>
+</div>
+<div id="bankFormWrap" class="admin-form"
+     style="max-width:520px; display:none;margin: 0 auto;">
+<form method="post" action="app/controllers/admin/update_payment_account.php">
+
+
+  <div class="form-grid">
+    <div class="full">
+      <label><i class="bi bi-bank2"></i> Ngân hàng</label>
+      <select name="bank_code" required>
+        <option value="970422" <?=($bank['bank_code']??'')=='970422'?'selected':''?>>MB Bank</option>
+        <option value="970436" <?=($bank['bank_code']??'')=='970436'?'selected':''?>>Vietcombank</option>
+        <option value="970415" <?=($bank['bank_code']??'')=='970415'?'selected':''?>>VietinBank</option>
+        <option value="970407" <?=($bank['bank_code']??'')=='970407'?'selected':''?>>Techcombank</option>
+        <option value="970418" <?=($bank['bank_code']??'')=='970418'?'selected':''?>>BIDV</option>
+      </select>
+    </div>
+    <div class="full">
+      <label><i class="bi bi-person-badge"></i> Tên người nhận</label>
+      <input class="input" name="account_name"
+             value="<?=htmlspecialchars($bank['account_name'] ?? '')?>" required>
+    </div>
+    <div class="full">
+      <label><i class="bi bi-credit-card"></i> Số tài khoản</label>
+      <input class="input" name="account_number"
+             value="<?=htmlspecialchars($bank['account_number'] ?? '')?>" required>
+    </div>
+  </div>
+  <div class="form-btns">
+    <button class="btn primary">
+      <i class="bi bi-save"></i> Lưu & áp dụng
+    </button>
+  </div>
+</form>
+</div>
     <!-- Chart -->
     <div class="admin-title" style="margin-top:28px">
       <h1><i class="bx bx-line-chart"></i> Doanh thu tháng này</h1>
@@ -185,6 +248,14 @@ document.addEventListener("DOMContentLoaded", () => {
     c.style.animationDelay = `${i*0.15}s`;
   });
 });
+
+document.querySelector(".btn-book").addEventListener("click", function(e){
+    if (selectedSeatIds.length === 0) {
+        e.preventDefault();
+        alert("Vui lòng chọn ít nhất 1 ghế trước khi thanh toán.");
+        return false;
+    }
+});
 </script>
 
 
@@ -202,6 +273,18 @@ socket.on("dashboard_update", () => {
     setTimeout(() => c.style.animation = "", 600);
   });
 });
+
+function toggleBankForm(){
+  const box = document.getElementById("bankFormWrap");
+  if (!box) return;
+
+  if (box.style.display === "none" || box.style.display === "") {
+    box.style.display = "block";
+    box.scrollIntoView({ behavior: "smooth", block: "start" });
+  } else {
+    box.style.display = "none";
+  }
+}
 </script>
 
 <style>
