@@ -102,6 +102,9 @@ function main(string $page = VINCINE_DEFAULT_PAGE): void
     global $conn;
 
     if ($page === 'logout') {
+        /* Đăng xuất là thao tác đổi trạng thái: bắt buộc POST kèm token. */
+        vincine_verify_csrf(false);
+
         session_unset();
         session_destroy();
         header('Location: index.php?p=home');

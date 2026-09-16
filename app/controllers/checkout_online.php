@@ -13,6 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit('Phương thức không hợp lệ.');
 }
 
+vincine_verify_csrf(false);
 vincine_require_customer();
 $customer_id = vincine_customer_id();
 

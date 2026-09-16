@@ -110,6 +110,7 @@ if (!$result) die("SQL ERROR LIST: " . $conn->error);
 </div>
 
 <form action="app/controllers/admin/payments_controller.php" method="post" id="multiForm">
+<?= vincine_csrf_input() ?>
 <table class="admin-table">
 <thead>
 <tr>

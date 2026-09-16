@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../app/include/auth.php';
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -16,6 +17,7 @@
     <h2><i class="bi bi-key-fill" style="color:var(--gold);margin-right:6px;"></i>Quên mật khẩu</h2>
 
     <form id="otpForm" class="login-form" method="post" action="app/controllers/send_otp.php">
+<?= vincine_csrf_input() ?>
       <!-- Lựa chọn phương thức -->
       <label style="color:var(--muted);font-weight:600;">phương thức xác thực:</label>
       <div style="display:flex;gap:16px;justify-content:center;margin:10px 0 20px;">

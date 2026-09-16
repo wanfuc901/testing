@@ -113,6 +113,7 @@ $rs = $conn->query("SELECT * FROM genres ORDER BY genre_id DESC");
                 <h3><i class="bi bi-pencil"></i> Thông tin thể loại</h3>
 
                 <form method="post">
+<?= vincine_csrf_input() ?>
                     <input type="hidden" id="genre_id" name="genre_id">
 
                     <label><i class="bi bi-type"></i> Tên thể loại</label>

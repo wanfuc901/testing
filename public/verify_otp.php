@@ -1,4 +1,4 @@
-<?php session_start(); ?>
+<?php require_once __DIR__ . '/../app/include/auth.php'; ?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -97,6 +97,7 @@ h2 {
 <div class="otp-wrapper">
   <h2><i class="bi bi-shield-lock-fill" style="margin-right:6px;"></i>Nhập mã xác nhận OTP</h2>
   <form class="otp-form" method="post" action="../app/controllers/verify_otp.php">
+<?= vincine_csrf_input() ?>
     <div class="otp-inputs">
       <input type="text" maxlength="1" class="otp-input" name="otp1" required>
       <input type="text" maxlength="1" class="otp-input" name="otp2" required>
@@ -131,7 +132,10 @@ function submitOTP() {
   const otp = [...inputs].map(i => i.value).join('');
   fetch('../app/controllers/verify_otp.php', {
     method: 'POST',
-    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRF-Token': <?= json_encode(vincine_csrf_token()) ?>
+    },
     body: 'otp=' + encodeURIComponent(otp)
   })
   .then(res => res.text())

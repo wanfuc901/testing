@@ -119,6 +119,7 @@ $rs = $conn->query($sql);
       }
     ?>
     <form class="admin-container" action="app/controllers/admin/users_controller.php" method="post">
+<?= vincine_csrf_input() ?>
       <input type="hidden" name="action" value="<?= $editId? 'update':'create_admin' ?>">
       <?php if($editId): ?><input type="hidden" name="user_id" value="<?= $editId ?>"><?php endif; ?>
       <div class="form-grid">
@@ -186,6 +187,7 @@ $rs = $conn->query($sql);
                         method="post"
                         onsubmit="return confirm('Xóa bản ghi này?');"
                         style="display:inline-block">
+<?= vincine_csrf_input() ?>
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                     <input type="hidden" name="type" value="<?= htmlspecialchars($row['type']) ?>">

@@ -153,6 +153,7 @@ h2{color:#f5c518;font-size:24px;margin:0 0 20px}
     </div>
 
     <form method="post" action="../../../app/controllers/payment_callback.php">
+<?= vincine_csrf_input() ?>
       <input type="hidden" name="payment_id" value="<?=$payment_id?>">
       <button class="btn" name="action" value="simulate_success">Xác nhận đã chuyển khoản</button>
     </form>
@@ -190,8 +191,11 @@ function autoCancelPayment() {
 
     fetch("../../../app/controllers/payment_callback.php", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "payment_id=<?= $payment_id ?>&action=auto_cancel"
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRF-Token": <?= json_encode(vincine_csrf_token()) ?>
+        },
+        body: "payment_id=<?= (int)$payment_id ?>&action=auto_cancel"
     })
     .then(res => res.text())
     .then(() => {

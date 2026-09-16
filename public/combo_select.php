@@ -30,6 +30,7 @@ $combos = $conn->query("SELECT * FROM combos WHERE active=1");
   </div>
 
   <form method="post" action="index.php?p=cbp" class="combo-form">
+<?= vincine_csrf_input() ?>
     <div class="combo-list">
       <?php while($c = $combos->fetch_assoc()): ?>
       <div class="combo-item">

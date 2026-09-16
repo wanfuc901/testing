@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../include/auth.php';
 
 header('Content-Type: application/json; charset=utf-8');
 vincine_require_admin(true);
+vincine_verify_csrf(true);
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 

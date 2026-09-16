@@ -132,3 +132,37 @@ composer install
   `ticket_detail.php`) đều lọc theo `customer_id` của phiên đăng nhập.
 - `users.user_id` và `customers.customer_id` là hai dãy số độc lập — không
   dùng chung một biến ID cho cả hai bảng.
+
+---
+
+## 🛡️ Chống CSRF
+
+Mọi biểu mẫu POST nhúng `<?= vincine_csrf_input() ?>`, mọi handler POST gọi
+`vincine_verify_csrf()`. Endpoint quản trị nhận kiểm tra này tự động qua
+`app/include/require_admin.php` nên không thể bỏ sót khi thêm file mới.
+
+JavaScript gọi `fetch` gửi token qua header `X-CSRF-Token`:
+
+```js
+fetch('app/controllers/admin/showtimes_controller.php', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'X-CSRF-Token': <?= json_encode(vincine_csrf_token()) ?>
+  },
+  body: 'action=delete&showtime_id=' + id
+});
+```
+
+Request thiếu token nhận HTTP 419.
+
+## 🚦 Giới hạn đăng nhập sai
+
+`login_attempts` ghi lại mỗi lần đăng nhập sai theo email và IP. Quá 5 lần cho
+một email hoặc 20 lần từ một IP trong 15 phút thì bị chặn, trả HTTP 429.
+Các ngưỡng nằm ở đầu phần throttle trong `app/include/auth.php`.
+
+Nếu chưa chạy `DTB/migrations/2026-09-17_login_attempts.sql`, tính năng này tự
+tắt và ghi cảnh báo vào log — đăng nhập vẫn hoạt động bình thường.
+
+Mã OTP đặt lại mật khẩu bị khoá sau 5 lần nhập sai, phải xin mã mới.

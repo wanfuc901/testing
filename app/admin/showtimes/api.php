@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../models/ShowtimeModel.php';
 
 header('Content-Type: application/json; charset=utf-8');
 vincine_require_admin(true);
+vincine_verify_csrf(true);
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 

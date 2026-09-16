@@ -91,6 +91,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     goto render;
 }
 
+vincine_verify_csrf(false);
+
 $idToken = trim((string)($_POST['credential'] ?? ''));
 if ($idToken === '') {
     goto render;

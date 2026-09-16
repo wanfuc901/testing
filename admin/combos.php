@@ -30,6 +30,7 @@ $rs = $conn->query("SELECT * FROM combos ORDER BY combo_id DESC");
       }
     ?>
     <form method="post" enctype="multipart/form-data" class="admin-form" action="app/controllers/admin/combos_controller.php">
+<?= vincine_csrf_input() ?>
       <input type="hidden" name="action" value="<?= $editId ? 'update' : 'create' ?>">
       <input type="hidden" name="combo_id" value="<?=$editId?>">
       <input type="hidden" name="image_uploaded" id="image_uploaded" value="<?=htmlspecialchars($edit['image'])?>">
@@ -84,6 +85,8 @@ $rs = $conn->query("SELECT * FROM combos ORDER BY combo_id DESC");
       uploadBtn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Đang tải...";
 
       try {
+        formData.append('_csrf', <?= json_encode(vincine_csrf_token()) ?>);
+
         const res = await fetch('app/upload.php', { method: 'POST', body: formData });
         const text = await res.text();
 
@@ -130,12 +133,14 @@ $rs = $conn->query("SELECT * FROM combos ORDER BY combo_id DESC");
           <td class="td-actions">
             <a href="index.php?p=admin_combos&edit=<?=$r['combo_id']?>" class="btn ghost" title="Sửa"><i class='bx bx-edit'></i></a>
             <form method="post" action="app/controllers/admin/combos_controller.php" class="inline-action">
+<?= vincine_csrf_input() ?>
               <input type="hidden" name="action" value="toggle">
               <input type="hidden" name="combo_id" value="<?= (int)$r['combo_id'] ?>">
               <button type="submit" class="btn ghost" title="Ẩn/Hiện"><i class='bx bx-low-vision'></i></button>
             </form>
             <form method="post" action="app/controllers/admin/combos_controller.php" class="inline-action"
                   onsubmit="return confirm('Xóa combo này?')">
+<?= vincine_csrf_input() ?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="combo_id" value="<?= (int)$r['combo_id'] ?>">
               <button type="submit" class="btn danger" title="Xóa"><i class='bx bx-trash'></i></button>

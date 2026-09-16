@@ -30,6 +30,7 @@ if (vincine_is_logged_in()) {
     <!-- ========== LOGIN FORM ========== -->
     <div class="vc-form-box login">
       <form method="post" action="index.php?p=pcl" class="vc-auth-form">
+<?= vincine_csrf_input() ?>
         <h1>Đăng nhập</h1>
 
         <div class="vc-input-box">
@@ -75,6 +76,7 @@ if (vincine_is_logged_in()) {
     <!-- ========== REGISTER FORM ========== -->
     <div class="vc-form-box register">
       <form method="post" action="app/controllers/process_register.php" class="vc-auth-form">
+<?= vincine_csrf_input() ?>
         <h1>Đăng ký</h1>
 
         <div class="vc-input-box">
@@ -129,12 +131,19 @@ if (vincine_is_logged_in()) {
       form.method = "POST";
       form.action = "app/controllers/oauth_google.php";
 
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = "credential";
-      input.value = response.credential;
+      const fields = {
+          credential: response.credential,
+          _csrf: <?= json_encode(vincine_csrf_token()) ?>
+      };
 
-      form.appendChild(input);
+      for (const [name, value] of Object.entries(fields)) {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = name;
+          input.value = value;
+          form.appendChild(input);
+      }
+
       document.body.appendChild(form);
       form.submit();
   }

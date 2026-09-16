@@ -27,6 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     goto output;
 }
 
+vincine_verify_csrf(false);
+
 /* ====================================================
    1) KIỂM TRA INPUT
 ==================================================== */
@@ -39,6 +41,15 @@ if ($email === '' || $password === '') {
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $msgTitle = 'Email không hợp lệ';
     $msgText  = 'Vui lòng kiểm tra lại email.';
+    goto output;
+}
+
+/* Chặn dò mật khẩu: đếm theo cả email lẫn IP trong cửa sổ thời gian. */
+if (vincine_login_attempts_left($conn, $email) <= 0) {
+    http_response_code(429);
+    $msgTitle = 'Tạm khoá đăng nhập';
+    $msgText  = 'Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau '
+              . VINCINE_LOGIN_WINDOW_MINUTES . ' phút.';
     goto output;
 }
 
@@ -67,10 +78,13 @@ $stmt->close();
 if ($staffAccount) {
 
     if (!password_verify($password, (string)$staffAccount['password'])) {
+        vincine_login_record_failure($conn, $email);
         $msgTitle = 'Đăng nhập thất bại';
         $msgText  = LOGIN_GENERIC_ERROR;
         goto output;
     }
+
+    vincine_login_clear_failures($conn, $email);
 
     $role = in_array($staffAccount['role'], [VINCINE_ROLE_ADMIN, VINCINE_ROLE_STAFF], true)
         ? (string)$staffAccount['role']
@@ -117,6 +131,7 @@ $customer = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 if (!$customer) {
+    vincine_login_record_failure($conn, $email);
     $msgTitle = 'Đăng nhập thất bại';
     $msgText  = LOGIN_GENERIC_ERROR;
     goto output;
@@ -130,11 +145,13 @@ if ((string)$customer['password'] === '') {
 }
 
 if (!password_verify($password, (string)$customer['password'])) {
+    vincine_login_record_failure($conn, $email);
     $msgTitle = 'Đăng nhập thất bại';
     $msgText  = LOGIN_GENERIC_ERROR;
     goto output;
 }
 
+vincine_login_clear_failures($conn, $email);
 vincine_start_authenticated_session();
 
 $_SESSION['customer_id'] = (int)$customer['customer_id'];

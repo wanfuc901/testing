@@ -28,6 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     goto render;
 }
 
+vincine_verify_csrf(false);
+
 /* --- Phải qua bước xác minh OTP --- */
 if ($email === '' || empty($_SESSION['otp_verified']) || !is_array($account)) {
     $msgTitle = 'Phiên hết hạn';

@@ -76,6 +76,7 @@ $totalPages = ceil($total / $perPage);
 <link rel="stylesheet" href="public/assets/bootstrap-icons/bootstrap-icons.css">
 
     <form class="admin-container" action="app/controllers/admin/movies_controller.php" method="post" enctype="multipart/form-data">
+<?= vincine_csrf_input() ?>
 
 
 
@@ -196,6 +197,7 @@ $totalPages = ceil($total / $perPage);
               method="post"
               style="margin:0; padding:0; display:inline-flex; align-items:center;"
               onsubmit="return confirm('Xóa phim này?');">
+<?= vincine_csrf_input() ?>
             <input type="hidden" name="action" value="delete">
             <input type="hidden" name="movie_id" value="<?= (int)$row['movie_id'] ?>">
             <button class="btn" type="submit">Xóa</button>

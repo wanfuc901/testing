@@ -91,6 +91,7 @@ $bank = $bankRes ? $bankRes->fetch_assoc() : [];
 <div id="bankFormWrap" class="admin-form"
      style="max-width:520px; display:none;margin: 0 auto;">
 <form method="post" action="app/controllers/admin/update_payment_account.php">
+<?= vincine_csrf_input() ?>
 
 
   <div class="form-grid">

@@ -1,4 +1,4 @@
-<?php session_start(); ?>
+<?php require_once __DIR__ . '/../app/include/auth.php'; ?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -13,6 +13,7 @@
   <div class="reset-wrapper">
     <h2><i class="bi bi-shield-lock-fill" style="color:var(--gold);"></i>Đặt lại mật khẩu</h2>
     <form class="reset-form" method="post" action="../app/controllers/reset_password.php">
+<?= vincine_csrf_input() ?>
       <div class="password-wrapper">
         <input type="password" name="password" class="input" placeholder="Mật khẩu mới" required>
         <i class="bi bi-eye-slash vc-eye" onclick="toggleEye(this)"></i>

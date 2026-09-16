@@ -183,9 +183,14 @@ while($r = $rooms->fetch_assoc()) $roomList[] = $r;
 </div>
 
 <script>
+const CSRF_TOKEN = <?= json_encode(vincine_csrf_token()) ?>;
+
 const api = (p,method='GET',body=null)=>fetch('app/admin/showtimes/api.php' + (method==='GET'?'?'+new URLSearchParams(p):''), {
   method,
-  headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+  headers:{
+    'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',
+    'X-CSRF-Token': CSRF_TOKEN
+  },
   body: method==='POST'? new URLSearchParams(p):null
 }).then(r=>r.json());
 

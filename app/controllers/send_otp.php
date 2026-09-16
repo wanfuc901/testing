@@ -12,7 +12,15 @@ const OTP_SENT_NOTICE = '📧 Nếu email tồn tại trong hệ thống, mã OT
 $email = trim((string)($_POST['email'] ?? ''));
 $msg   = '';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    $msg = '❌ Yêu cầu không hợp lệ.';
+    goto render;
+}
+
+vincine_verify_csrf(false);
+
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $msg = '❌ Email không hợp lệ.';
     goto render;
 }

@@ -10,6 +10,8 @@ require_once __DIR__ . '/../include/auth.php';
 
 header('Content-Type: text/plain; charset=utf-8');
 
+vincine_verify_csrf(true);
+
 /** Số lần nhập sai tối đa trước khi phải xin mã mới. */
 const OTP_MAX_ATTEMPTS = 5;
 

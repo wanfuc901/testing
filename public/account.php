@@ -109,6 +109,7 @@ if ($isCustomer) {
       <?php endif; ?>
 
       <form method="post" action="index.php?p=logout">
+<?= vincine_csrf_input() ?>
         <button class="logout-btn"><i class='bx bx-log-out'></i> Đăng xuất</button>
       </form>
     </div>

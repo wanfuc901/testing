@@ -135,6 +135,7 @@ $stmt2->close();
       </div>
 
       <form method="POST" action="app/controllers/ajax_rate.php" class="rating-form">
+<?= vincine_csrf_input() ?>
         <input type="hidden" name="movie_id" value="<?= $movie_id ?>">
 
         <div class="stars-input">
@@ -155,11 +156,9 @@ $stmt2->close();
 </html>
 
 <script>
-setInterval(() => {
-    fetch('app/api/ping_activity.php?pg=movie_detail', { method: 'POST' });
-}, 15000);
-
-window.addEventListener('beforeunload', () => {
-    navigator.sendBeacon('app/api/leave_activity.php');
-});
+/*
+ * Đã gỡ vòng lặp ping tới app/api/ping_activity.php và
+ * app/api/leave_activity.php: hai file này không tồn tại nên mỗi 15 giây
+ * trình duyệt lại nhận một lỗi 404.
+ */
 </script>

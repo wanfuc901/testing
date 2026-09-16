@@ -22,6 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     $msgTitle = 'Yêu cầu không hợp lệ';
     $msgText  = 'Vui lòng đánh giá từ trang chi tiết phim.';
+} elseif (!hash_equals((string)($_SESSION[VINCINE_CSRF_FIELD] ?? ''), (string)($_POST[VINCINE_CSRF_FIELD] ?? ''))) {
+    http_response_code(419);
+    $msgTitle = 'Phiên làm việc hết hạn';
+    $msgText  = 'Vui lòng tải lại trang và đánh giá lại.';
 } elseif ($customer_id <= 0) {
     $msgTitle = 'Chưa đăng nhập';
     $msgText  = 'Bạn cần đăng nhập để đánh giá phim.';

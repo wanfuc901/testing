@@ -52,6 +52,7 @@ $rs = $conn->query($sql);
     </div>
 
     <form action="app/controllers/admin/tickets_controller.php" method="post" id="multiForm">
+<?= vincine_csrf_input() ?>
       <table class="admin-table">
         <thead>
           <tr>

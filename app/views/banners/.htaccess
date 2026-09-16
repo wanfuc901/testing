@@ -1,0 +1,5 @@
+# Thư mục nhận file upload: chỉ phục vụ ảnh tĩnh, không chạy script.
+# Dùng FilesMatch thay cho php_flag để chạy được cả trên mod_php lẫn PHP-FPM.
+<FilesMatch "\.(?i:php|phtml|phar|php[0-9]|cgi|pl|py|sh|html?|htaccess)$">
+    Require all denied
+</FilesMatch>

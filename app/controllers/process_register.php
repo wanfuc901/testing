@@ -1,21 +1,22 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-require __DIR__ . "/../config/config.php";
+/**
+ * Đăng ký tài khoản khách hàng.
+ */
 
-/* ===== DEBUG ===== */
+require_once __DIR__ . '/../include/auth.php';
+
+/** Độ dài mật khẩu tối thiểu, dùng chung với luồng đặt lại mật khẩu. */
+const REGISTER_MIN_PASSWORD_LENGTH = 8;
 
 $status   = 'error';
 $msgTitle = '';
 $msgText  = '';
 $redirect = '../../index.php?p=rg';
 
-/* ===== CHECK DB ===== */
-if (!isset($conn) || $conn->connect_error) {
-    die("<b>Lỗi kết nối MySQL:</b> " . ($conn->connect_error ?? 'Chưa khởi tạo kết nối.'));
-}
-
 /* ===== POST REQUEST ===== */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    vincine_verify_csrf(false);
 
     $name     = trim($_POST['name'] ?? '');
     $email    = trim($_POST['email'] ?? '');
@@ -32,7 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $msgTitle = 'Email không hợp lệ';
         $msgText  = 'Vui lòng kiểm tra lại địa chỉ email.';
     }
-    elseif ($password !== $confirm) {
+    elseif (!preg_match('/^0\d{9,10}$/', $phone)) {
+        $msgTitle = 'Số điện thoại không hợp lệ';
+        $msgText  = 'Số điện thoại phải gồm 10-11 chữ số và bắt đầu bằng 0.';
+    }
+    elseif (mb_strlen($password) < REGISTER_MIN_PASSWORD_LENGTH) {
+        $msgTitle = 'Mật khẩu quá ngắn';
+        $msgText  = 'Mật khẩu phải có ít nhất ' . REGISTER_MIN_PASSWORD_LENGTH . ' ký tự.';
+    }
+    elseif (!hash_equals($password, $confirm)) {
         $msgTitle = 'Mật khẩu không khớp';
         $msgText  = 'Hai mật khẩu bạn nhập không trùng khớp.';
     }
@@ -40,7 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         /* ===== CHECK EMAIL TỒN TẠI TRONG CUSTOMERS ===== */
         $check = $conn->prepare("SELECT customer_id FROM customers WHERE email=?");
-        if (!$check) die("❌ Lỗi prepare (check): " . $conn->error);
+        if (!$check) {
+            error_log('[vincine] process_register check prepare failed: ' . $conn->error);
+            http_response_code(500);
+            exit('Hệ thống đang bận. Vui lòng thử lại sau.');
+        }
 
         $check->bind_param("s", $email);
         $check->execute();
