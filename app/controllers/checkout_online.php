@@ -1,31 +1,29 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+/**
+ * Tạo đơn đặt vé cho khách hàng (thanh toán tại quầy hoặc chuyển khoản).
+ */
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-require __DIR__ . "/../config/config.php";
-require_once __DIR__ . "/../../helpers/realtime.php";
-require_once __DIR__ . "/../../helpers/order_helper.php";
-
-$conn->set_charset("utf8mb4");
-date_default_timezone_set("Asia/Ho_Chi_Minh");
+require_once __DIR__ . '/../include/auth.php';
+require_once __DIR__ . '/../../helpers/realtime.php';
+require_once __DIR__ . '/../../helpers/order_helper.php';
 
 /* ========= VALIDATE ========= */
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    die("Phương thức không hợp lệ.");
+    exit('Phương thức không hợp lệ.');
 }
 
-$showtime_id = intval($_POST['showtime_id'] ?? 0);
-$seats       = trim($_POST['seats'] ?? '');
-$method      = $_POST['payment_method'] ?? 'cash';
+vincine_require_customer();
+$customer_id = vincine_customer_id();
 
-$customer_id = intval($_SESSION['customer_id'] ?? 0);
-if (!$customer_id) die("Bạn cần đăng nhập để thanh toán.");
+$showtime_id = (int)($_POST['showtime_id'] ?? 0);
+$seats       = trim((string)($_POST['seats'] ?? ''));
+$method      = (string)($_POST['payment_method'] ?? 'cash');
 
-if (!$showtime_id || !$seats) die("Dữ liệu không hợp lệ.");
+if ($showtime_id <= 0 || $seats === '') {
+    http_response_code(400);
+    exit('Dữ liệu không hợp lệ.');
+}
 
 /* ========= COMBO ========= */
 $temp         = $_SESSION['temp_booking'] ?? [];
@@ -42,13 +40,30 @@ $stmtPrice = $conn->prepare("
     JOIN showtimes s ON s.movie_id = m.movie_id
     WHERE s.showtime_id = ?
 ");
+if (!$stmtPrice) {
+    error_log('[vincine] checkout_online price prepare failed: ' . $conn->error);
+    http_response_code(500);
+    exit('Hệ thống đang bận. Vui lòng thử lại sau.');
+}
+
 $stmtPrice->bind_param("i", $showtime_id);
 $stmtPrice->execute();
 $stmtPrice->bind_result($ticketPrice);
 $stmtPrice->fetch();
 $stmtPrice->close();
 
-if (!$ticketPrice) $ticketPrice = 80000;
+$ticketPrice = (float)($ticketPrice ?: VINCINE_DEFAULT_TICKET_PRICE);
+
+if (empty($seatArr)) {
+    http_response_code(400);
+    exit('Bạn chưa chọn ghế nào.');
+}
+
+/* Chặn đặt trùng trước khi ghi: ghế có thể vừa bị người khác giữ. */
+if (!is_seat_available($showtime_id, $seatArr)) {
+    http_response_code(409);
+    exit('Một số ghế bạn chọn vừa có người đặt. Vui lòng chọn lại.');
+}
 
 $totalTicket = count($seatArr) * $ticketPrice;
 $totalPrice  = $totalTicket + $combo_total;
@@ -119,7 +134,8 @@ if ($method === 'cash') {
 
     /* REALTIME */
     emit_seat_booked_done($showtime_id, $booked);
-
+    /* send_ticket_email.php đọc $payment_id từ scope này. */
+    require __DIR__ . '/send_ticket_email.php';
     unset($_SESSION['temp_booking']);
     header("Location: ../../public/booking_success.php");
     exit;

@@ -1,14 +1,7 @@
 <?php
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-require __DIR__ . '/../../config/config.php';
-require __DIR__ . '/../../../vendor/phpmailer/PHPMailer.php';
-require __DIR__ . '/../../../vendor/phpmailer/SMTP.php';
-require __DIR__ . '/../../../vendor/phpmailer/Exception.php';
-require __DIR__ . '/../../../helpers/realtime.php';
-
-$conn->set_charset("utf8mb4");
+require_once __DIR__ . '/../../include/require_admin.php';
+require_once __DIR__ . '/../../../helpers/mailer.php';
+require_once __DIR__ . '/../../../helpers/realtime.php';
 
 /* ============================================
    LẤY DANH SÁCH ID TICKET
@@ -128,11 +121,11 @@ if ($action === 'mark_paid' || $action === 'confirm') {
 
 $stmt = $conn->prepare($sql);
 
-// ==== THÊM ĐOẠN NÀY ====
 if (!$stmt) {
-    die("SQL PREPARE ERROR (EMAIL): " . $conn->error . "<br>Query: $sql");
+    error_log('[vincine] tickets_controller email prepare failed: ' . $conn->error);
+    http_response_code(500);
+    exit('Không gửi được email xác nhận vé.');
 }
-// =======================
 
 $stmt->bind_param($types, ...$ids);   // Không còn lỗi
 $stmt->execute();
@@ -141,7 +134,7 @@ $res = $stmt->get_result();
 
     $byUser = [];
     while ($row = $res->fetch_assoc()) {
-        $uid = (int)$row['user_id'];
+        $uid = (int)$row['customer_id'];
         if (!isset($byUser[$uid])) {
             $byUser[$uid] = [
                 'email' => $row['email'],
@@ -157,22 +150,9 @@ $res = $stmt->get_result();
     $baseURL = (isset($_SERVER['HTTPS']) ? "https://" : "http://")
               . $_SERVER['HTTP_HOST'] . "/VincentCinemas";
 
-    $mail = new PHPMailer(true);
-
     try {
-        $mail->isSMTP();
-        $mail->Host = 'smtp.gmail.com';
-        $mail->SMTPAuth = true;
-        $mail->Username = 'phuc.pham.vst@gmail.com';
-        $mail->Password = 'fvde ashj zbgq ohtr';
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port = 587;
-
-        $mail->CharSet = 'UTF-8';
-        $mail->Encoding = 'base64';
+        $mail = vincine_mailer();
         $mail->SMTPKeepAlive = true;
-
-        $mail->setFrom('phuc.pham.vst@gmail.com', 'VinCine Support');
 
         foreach ($byUser as $uid => $info) {
 
@@ -252,7 +232,8 @@ $res = $stmt->get_result();
         $mail->smtpClose();
 
     } catch (Exception $e) {
-        error_log("Mail send fail: ".$mail->ErrorInfo);
+        $detail = isset($mail) ? $mail->ErrorInfo : $e->getMessage();
+        error_log('[vincine] mail send fail: ' . $detail);
     }
 }
 
