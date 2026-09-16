@@ -1,0 +1,2 @@
+# Dump cơ sở dữ liệu: không bao giờ phục vụ qua HTTP
+Require all denied

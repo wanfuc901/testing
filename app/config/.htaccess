@@ -1,0 +1,2 @@
+# Cấu hình và secrets: không truy cập trực tiếp qua HTTP
+Require all denied
